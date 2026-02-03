@@ -13,7 +13,14 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
   const t = translations['pt-BR'];
   const [isSyncing, setIsSyncing] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeModal, setActiveModal] = useState<'SETTINGS' | 'NEW_SLOT' | null>(null);
   
+  const [waitingList, setWaitingList] = useState([
+    { name: 'Daniela Lima', time: 'Urgente', delay: '1 dia' },
+    { name: 'Enzo Ferrari', time: 'Manhã', delay: '4 dias' }
+  ]);
+
   const [appointments, setAppointments] = useState([
     { id: '1', patient: 'Ana Silva', time: '09:00', type: 'Consulta', status: 'WAITING_CONFIRMATION', plan: 'Unimed' },
     { id: '2', patient: 'Bruno Costa', time: '10:30', type: 'Retorno', status: 'CONFIRMED', plan: 'Particular' },
@@ -60,9 +67,9 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
     }
   }, []);
 
-  const handleGoogleConnect = () => {
+  const handleGoogleAuth = () => {
+    setShowAuthModal(false);
     setIsSyncing(true);
-    // Simulação do OAuth2 e Sincronização
     setTimeout(() => {
       setIsSyncing(false);
       setIsGoogleConnected(true);
@@ -70,53 +77,106 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         id: Math.random().toString(),
         userId: user.id,
         title: 'Google Agenda Conectado',
-        message: 'Seus eventos externos foram sincronizados com sucesso.',
+        message: 'Sincronização bidirecional ativada com sucesso.',
         type: 'SUCCESS',
         read: false,
         createdAt: Date.now()
       });
-    }, 2000);
+    }, 2500);
   };
 
   const triggerReallocation = (id: string) => {
+    const nextInLine = waitingList[0];
+    if (!nextInLine) {
+        addNotification({
+            id: Math.random().toString(),
+            userId: user.id,
+            title: 'Erro na Realocação',
+            message: 'Não há pacientes na fila de espera para este horário.',
+            type: 'ALERT',
+            read: false,
+            createdAt: Date.now()
+        });
+        return;
+    }
+
+    setAppointments(prev => prev.map(a => a.id === id ? { 
+        ...a, 
+        patient: nextInLine.name, 
+        status: 'CONFIRMED', 
+        plan: 'Fila de Espera' 
+    } : a));
+
+    setWaitingList(prev => prev.slice(1));
+
     addNotification({
       id: Math.random().toString(),
       userId: user.id,
-      title: 'Sistema de Realocação Ativado',
-      message: 'Paciente não confirmou. Notificando próximo da fila de espera...',
-      type: 'ALERT',
+      title: 'Realocação Concluída',
+      message: `${nextInLine.name} foi movido(a) da fila para o horário das 09:00.`,
+      type: 'SUCCESS',
       read: false,
       createdAt: Date.now()
     });
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'CANCELED' } : a));
+  };
+
+  const handleForceFit = (index: number) => {
+    const patient = waitingList[index];
+    const newSlot = {
+        id: Math.random().toString(),
+        patient: patient.name,
+        time: '17:30', // Slot de encaixe padrão
+        type: 'Encaixe Urgente',
+        status: 'CONFIRMED',
+        plan: 'Urgência'
+    };
+    setAppointments(prev => [...prev, newSlot].sort((a, b) => a.time.localeCompare(b.time)));
+    setWaitingList(prev => prev.filter((_, i) => i !== index));
+    addNotification({
+        id: Math.random().toString(),
+        userId: user.id,
+        title: 'Encaixe Realizado',
+        message: `${patient.name} foi adicionado(a) ao fim da agenda de hoje.`,
+        type: 'INFO',
+        read: false,
+        createdAt: Date.now()
+    });
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Agenda Ativa - Dr(a). {user.name}</h1>
           <p className="text-slate-500 font-medium">Gestão inteligente para sua clínica individual.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-6 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+          <button 
+            onClick={() => setActiveModal('SETTINGS')}
+            className="px-6 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-            Configurações
+            {t.modals.settings}
           </button>
-          <button className="px-6 py-3 rounded-2xl neo-gradient text-sm font-bold text-white shadow-lg shadow-babyBlue/40 transition-all hover:-translate-y-1">
-            Novo Slot Livre
+          <button 
+            onClick={() => setActiveModal('NEW_SLOT')}
+            className="px-6 py-3 rounded-2xl neo-gradient text-sm font-bold text-white shadow-lg shadow-babyBlue/40 transition-all hover:-translate-y-1"
+          >
+            {t.modals.newSlot}
           </button>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Ocupados', val: '12', icon: '👤', color: 'bg-babyBlue' },
-              { label: 'Esperando', val: '5', icon: '⌛', color: 'bg-aqua' },
-              { label: 'Realocados', val: '3', icon: '🔄', color: 'bg-green-100' },
-              { label: 'Previsão', val: 'R$ 3.8k', icon: '📈', color: 'bg-slate-100' },
+              { label: t.app.stats.occupied, val: appointments.length.toString(), icon: '👤', color: 'bg-babyBlue' },
+              { label: t.app.stats.free, val: (15 - appointments.length).toString(), icon: '⌛', color: 'bg-aqua' },
+              { label: t.app.stats.canceled, val: waitingList.length.toString(), icon: '🔄', color: 'bg-green-100' },
+              { label: 'Previsão', val: `R$ ${(appointments.length * 250).toLocaleString()}`, icon: '📈', color: 'bg-slate-100' },
             ].map((s, i) => (
               <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
                 <div className={`w-10 h-10 ${s.color} rounded-xl flex items-center justify-center text-xl mb-3`}>{s.icon}</div>
@@ -139,7 +199,7 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
             <p className="text-xs text-slate-500 mb-6">{t.integrations.googleDesc}</p>
             
             <button 
-              onClick={handleGoogleConnect}
+              onClick={() => isGoogleConnected ? setIsGoogleConnected(false) : setShowAuthModal(true)}
               disabled={isSyncing}
               className={`w-full py-4 rounded-2xl border-2 flex items-center justify-center gap-3 font-bold transition-all ${isGoogleConnected ? 'bg-green-50 border-green-100 text-green-700' : 'bg-white border-slate-100 hover:border-babyBlue text-slate-700'}`}
             >
@@ -173,29 +233,35 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
               Lista de Espera Ativa
             </h3>
             <div className="space-y-4">
-              {[
-                { name: 'Daniela Lima', time: 'Urgente', delay: '1 dia' },
-                { name: 'Enzo Ferrari', time: 'Manhã', delay: '4 dias' }
-              ].map((w, i) => (
+              {waitingList.map((w, i) => (
                 <div key={i} className="bg-white/10 p-4 rounded-2xl flex justify-between items-center group">
                   <div>
                     <p className="font-bold text-sm">{w.name}</p>
                     <p className="text-[10px] text-white/60 uppercase font-black tracking-widest">{w.time}</p>
                   </div>
-                  <button className="text-[10px] font-black uppercase text-aqua bg-aqua/10 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all">Forçar Encaixe</button>
+                  <button 
+                    onClick={() => handleForceFit(i)}
+                    className="text-[10px] font-black uppercase text-aqua bg-aqua/10 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    Forçar Encaixe
+                  </button>
                 </div>
               ))}
+              {waitingList.length === 0 && (
+                <p className="text-center text-xs text-white/40 italic py-4">Nenhum paciente na fila no momento.</p>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Main Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
           <h2 className="text-xl font-display font-bold text-slate-900">Gerenciamento de Consultas</h2>
           <div className="flex gap-2">
-             <span className="px-3 py-1 rounded-full bg-aqua/10 text-deepAqua text-[10px] font-black uppercase tracking-widest">Confirmadas: 8</span>
-             <span className="px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-[10px] font-black uppercase tracking-widest">Aguardando: 4</span>
+             <span className="px-3 py-1 rounded-full bg-aqua/10 text-deepAqua text-[10px] font-black uppercase tracking-widest">Confirmadas: {appointments.filter(a => a.status === 'CONFIRMED').length}</span>
+             <span className="px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-[10px] font-black uppercase tracking-widest">Aguardando: {appointments.filter(a => a.status === 'WAITING_CONFIRMATION').length}</span>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -221,10 +287,8 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
                       <span className="px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest border border-green-100">Confirmado</span>
                     ) : app.status === 'REALLOCATED' ? (
                       <span className="px-3 py-1.5 rounded-full bg-babyBlue/20 text-blue-700 text-[10px] font-black uppercase tracking-widest border border-babyBlue/30">Vaga Realocada</span>
-                    ) : app.status === 'CANCELED' ? (
-                       <span className="px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-[10px] font-black uppercase tracking-widest border border-red-100">Cancelado / Vaga Aberta</span>
                     ) : (
-                      <span className="px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase tracking-widest border border-yellow-100">Aguardando Resposta (Token)</span>
+                      <span className="px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-600 text-[10px] font-black uppercase tracking-widest border border-yellow-100">Aguardando Resposta</span>
                     )}
                   </td>
                   <td className="px-8 py-6 text-right">
@@ -243,6 +307,91 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
           </table>
         </div>
       </div>
+
+      {/* Google Auth Modal Simulation */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAuthModal(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+             <div className="text-center mb-8">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Calendar_icon_%282020%29.svg" className="w-16 h-16 mx-auto mb-6" alt="Google" />
+                <h2 className="text-2xl font-display font-bold text-slate-900">{t.integrations.authTitle}</h2>
+                <p className="text-slate-500 mt-2 text-sm">{t.integrations.authDesc}</p>
+             </div>
+             <div className="space-y-4 mb-8">
+                {t.integrations.permissions.map((p: string, i: number) => (
+                    <div key={i} className="flex items-center gap-3 text-sm text-slate-700 bg-slate-50 p-3 rounded-xl">
+                        <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                        {p}
+                    </div>
+                ))}
+             </div>
+             <div className="flex flex-col gap-3">
+                <button onClick={handleGoogleAuth} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all">{t.integrations.allow}</button>
+                <button onClick={() => setShowAuthModal(false)} className="w-full py-4 text-slate-400 font-bold hover:text-slate-600">{t.integrations.deny}</button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {activeModal === 'SETTINGS' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setActiveModal(null)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+             <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-display font-bold text-slate-900">{t.modals.settings}</h2>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+             <div className="space-y-6">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Nome de Exibição</label>
+                    <input type="text" defaultValue={user.name} className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-babyBlue/20" />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Notificações</label>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                        <span className="text-sm font-bold text-slate-700">WhatsApp Ativo</span>
+                        <div className="w-12 h-6 bg-deepAqua rounded-full relative">
+                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <button onClick={() => { setActiveModal(null); addNotification({ id: 's1', userId: user.id, title: 'Perfil Atualizado', message: 'Suas alterações foram salvas.', type: 'SUCCESS', read: false, createdAt: Date.now() }); }} className="w-full py-5 neo-gradient text-white rounded-2xl font-bold shadow-xl">{t.modals.save}</button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Slot Modal */}
+      {activeModal === 'NEW_SLOT' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setActiveModal(null)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+             <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-display font-bold text-slate-900">{t.modals.newSlot}</h2>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+             <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Data</label>
+                        <input type="date" defaultValue="2024-05-20" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Hora</label>
+                        <input type="time" defaultValue="08:00" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm" />
+                    </div>
+                </div>
+                <button onClick={() => { setActiveModal(null); addNotification({ id: 'ns1', userId: user.id, title: 'Grade Aberta', message: 'Novo horário disponível para agendamento.', type: 'SUCCESS', read: false, createdAt: Date.now() }); }} className="w-full py-5 neo-gradient text-white rounded-2xl font-bold shadow-xl">Criar Slot Disponível</button>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

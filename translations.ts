@@ -29,7 +29,12 @@ export const translations: Record<Language, any> = {
       connect: "Conectar Google Agenda",
       connected: "Google Agenda Conectado",
       syncing: "Sincronizando em tempo real...",
-      lastSync: "Última sincronização há 2 min"
+      lastSync: "Última sincronização há 2 min",
+      authTitle: "Autorização Google",
+      authDesc: "O AGENDA MED solicita acesso para ler e escrever eventos no seu Google Calendar.",
+      permissions: ["Ver seus calendários", "Adicionar consultas novas", "Bloquear horários ocupados"],
+      allow: "Permitir Acesso",
+      deny: "Cancelar"
     },
     app: {
       welcome: "Dashboard AGENDA MED",
@@ -58,6 +63,14 @@ export const translations: Record<Language, any> = {
         cancel: "Liberar Vaga",
         delete: "Remover"
       }
+    },
+    modals: {
+      settings: "Configurações do Perfil",
+      newSlot: "Abrir Nova Grade",
+      healthTips: "Orientações de Saúde - Manaus",
+      booking: "Agendar Consulta",
+      save: "Salvar Alterações",
+      close: "Fechar"
     },
     hero: {
       h1: "Sua Agenda Nunca Mais Ficará Vazia.",

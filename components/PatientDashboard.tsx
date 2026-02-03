@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, AppView, Notification, MOCK_DATA, MOCK_PHYSICIANS_MANAUS } from '../types';
+import { translations } from '../translations';
 
 interface PatientDashboardProps {
   user: User;
@@ -10,9 +11,13 @@ interface PatientDashboardProps {
 }
 
 const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView, addNotification }) => {
+  const t = translations['pt-BR'];
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ specialty: '', city: 'Manaus', plan: '' });
   const [isBooking, setIsBooking] = useState<string | null>(null);
+  const [showTips, setShowTips] = useState(false);
+  const [bookingStep, setBookingStep] = useState<'IDLE' | 'SELECTING_TIME'>('IDLE');
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
 
   const filteredDoctors = MOCK_PHYSICIANS_MANAUS.filter(d => 
     (search === '' || d.name.toLowerCase().includes(search.toLowerCase())) &&
@@ -21,15 +26,22 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
     (filters.plan === '' || d.plans.includes(filters.plan))
   );
 
-  const handleBooking = (docId: string) => {
-    setIsBooking(docId);
+  const handleBookingStart = (doc: any) => {
+    setSelectedDoc(doc);
+    setBookingStep('SELECTING_TIME');
+  };
+
+  const handleBookingConfirm = (time: string) => {
+    setIsBooking(selectedDoc.id);
+    setBookingStep('IDLE');
     setTimeout(() => {
       setIsBooking(null);
+      setSelectedDoc(null);
       addNotification({
         id: Math.random().toString(),
         userId: user.id,
-        title: 'Reserva em Manaus Solicitada',
-        message: 'A clínica local em Manaus recebeu seu pedido. Você será notificado via WhatsApp.',
+        title: 'Consulta Agendada',
+        message: `Sua consulta com ${selectedDoc.name} para às ${time} foi pré-confirmada.`,
         type: 'SUCCESS',
         read: false,
         createdAt: Date.now()
@@ -128,7 +140,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
                   </div>
                   <button 
                     disabled={isBooking === doc.id}
-                    onClick={() => handleBooking(doc.id)}
+                    onClick={() => handleBookingStart(doc)}
                     className="w-full mt-6 py-4 neo-gradient rounded-xl font-bold text-white text-sm shadow-lg shadow-babyBlue/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
                     {isBooking === doc.id ? <div className="loader !border-white !border-t-transparent"></div> : 'Consultar Agenda'}
@@ -138,6 +150,31 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
             </div>
           </section>
         </div>
+
+        {/* Booking Selection Modal */}
+        {bookingStep === 'SELECTING_TIME' && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBookingStep('IDLE')}></div>
+                <div className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+                    <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">{t.modals.booking}</h2>
+                    <p className="text-slate-500 text-sm mb-8">Com {selectedDoc?.name}</p>
+                    
+                    <div className="grid grid-cols-3 gap-3 mb-8">
+                        {['08:00', '09:30', '11:00', '14:30', '16:00', '17:30'].map(time => (
+                            <button 
+                                key={time} 
+                                onClick={() => handleBookingConfirm(time)}
+                                className="py-3 rounded-xl border border-slate-100 hover:border-babyBlue hover:bg-babyBlue/10 transition-all font-bold text-slate-700 text-xs"
+                            >
+                                {time}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <button onClick={() => setBookingStep('IDLE')} className="w-full py-4 text-slate-400 font-bold">{t.modals.close}</button>
+                </div>
+            </div>
+        )}
       </div>
     );
   }
@@ -193,7 +230,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
              <div className="absolute -top-10 -right-10 w-40 h-40 bg-aqua/20 rounded-full blur-3xl"></div>
              <h3 className="text-lg font-display font-bold mb-4">Saúde Manaus</h3>
              <p className="text-sm text-white/70 leading-relaxed mb-6">Mantenha-se hidratado. O clima úmido de Manaus exige atenção redobrada com a reposição de eletrólitos.</p>
-             <button className="text-[10px] font-black uppercase tracking-widest text-aqua hover:underline">Ver orientações</button>
+             <button onClick={() => setShowTips(true)} className="text-[10px] font-black uppercase tracking-widest text-aqua hover:underline">Ver orientações</button>
           </div>
 
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
@@ -205,6 +242,34 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
           </div>
         </div>
       </div>
+
+      {/* Health Tips Modal */}
+      {showTips && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowTips(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+             <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-display font-bold text-slate-900">{t.modals.healthTips}</h2>
+                <button onClick={() => setShowTips(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+             <div className="space-y-4">
+                {[
+                    { t: 'Hidratação Constante', d: 'Beba 2L de água/dia. O calor de Manaus acelera a desidratação.' },
+                    { t: 'Prevenção de Fungos', d: 'A umidade alta favorece micose. Mantenha a pele seca após o banho.' },
+                    { t: 'Repelente Noturno', d: 'Essencial em áreas próximas a igarapés para evitar arboviroses.' }
+                ].map((tip, i) => (
+                    <div key={i} className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <h4 className="font-bold text-slate-900 mb-1">{tip.t}</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">{tip.d}</p>
+                    </div>
+                ))}
+             </div>
+             <button onClick={() => setShowTips(false)} className="w-full mt-8 py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl">{t.modals.close}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
