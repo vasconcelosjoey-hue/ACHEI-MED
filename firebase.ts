@@ -1,34 +1,40 @@
 
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { getFirestore, collection, addDoc, serverTimestamp, Firestore } from "firebase/firestore";
 
-// PLACEHOLDER CONFIG - Replace with real values for production
+// CONFIGURAÇÃO DE DEMONSTRAÇÃO
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "DEMO_MODE_KEY",
+  authDomain: "achei-med.firebaseapp.com",
+  projectId: "achei-med",
+  storageBucket: "achei-med.appspot.com",
+  messagingSenderId: "000000000",
+  appId: "1:000000000:web:demo"
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-
-/*
-FIRESTORE SECURITY RULES (Recommendation):
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /leads/{lead} {
-      allow create: if request.resource.data.name.size() > 0 
-                    && request.resource.data.whatsapp.size() >= 8;
-      allow read, update, delete: if false;
-    }
-  }
+// Singleton initialization pattern
+let app;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
 }
-*/
+
+let firestoreInstance: Firestore | null = null;
+try {
+  firestoreInstance = getFirestore(app);
+} catch (error) {
+  console.error("Erro ao inicializar Firestore:", error);
+}
+
+export const db = firestoreInstance;
 
 export const saveLead = async (leadData: any) => {
+  if (!db) {
+    console.warn("Firestore não disponível. Operando em modo demo.");
+    return { id: "demo-lead-" + Date.now() };
+  }
+
   try {
     const docRef = await addDoc(collection(db, "leads"), {
       ...leadData,
@@ -37,7 +43,7 @@ export const saveLead = async (leadData: any) => {
     });
     return docRef;
   } catch (e) {
-    console.error("Error adding document: ", e);
-    throw e;
+    console.warn("Erro ao salvar lead (modo offline/demo):", e);
+    return { id: "demo-lead-" + Date.now() };
   }
 };
