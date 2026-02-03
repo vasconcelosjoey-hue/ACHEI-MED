@@ -1,6 +1,6 @@
 
 export type UserRole = 'PATIENT' | 'PHYSICIAN' | 'ATTENDANT';
-export type AppView = 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
+export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
 export type Language = 'pt-BR' | 'en';
 
 export const CONSTANTS = {
@@ -47,7 +47,6 @@ export interface Appointment {
   status: string;
 }
 
-// Fixed mock physicians with IDs expected by DashboardView
 export const MOCK_PHYSICIANS: Physician[] = [
   { id: 'phy1', name: 'Dr. Arlindo Jr.', specialty: 'Cardiologia', city: 'Manaus', plans: ['Unimed', 'Particular'], avatar: 'https://i.pravatar.cc/150?u=arlindo' },
   { id: 'phy2', name: 'Dra. Samara Lima', specialty: 'Dermatologia', city: 'Manaus', plans: ['Bradesco', 'Particular'], avatar: 'https://i.pravatar.cc/150?u=samara' },
@@ -56,7 +55,6 @@ export const MOCK_PHYSICIANS: Physician[] = [
 
 export const MOCK_PHYSICIANS_MANAUS: Physician[] = MOCK_PHYSICIANS;
 
-// Added missing mock appointments for dashboard views
 export const MOCK_APPOINTMENTS: Appointment[] = [
   { id: '1', physicianId: 'phy1', patientName: 'Ana Silva', email: 'ana@example.com', whatsapp: '92988887777', time: '09:00', status: 'pending' },
   { id: '2', physicianId: 'phy1', patientName: 'Bruno Costa', email: 'bruno@example.com', whatsapp: '92988886666', time: '10:30', status: 'confirmed' }

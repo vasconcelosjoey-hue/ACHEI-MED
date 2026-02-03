@@ -4,9 +4,10 @@ import { UserRole, User } from '../types';
 
 interface AuthViewProps {
   onAuthSuccess: (user: User) => void;
+  onBack: () => void;
 }
 
-const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess }) => {
+const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const [role, setRole] = useState<UserRole>('PATIENT');
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       const mockUser: User = {
         id: Math.random().toString(36).substr(2, 9),
@@ -58,13 +58,20 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-slate-50">
-      {/* Decorative Blobs */}
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-slate-50 pt-24">
       <div className="absolute top-[-10%] left-[-10%] w-1/2 h-1/2 bg-babyBlue/30 rounded-full blur-[120px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-1/2 h-1/2 bg-aqua/30 rounded-full blur-[120px] animate-pulse"></div>
 
       <div className="w-full max-w-xl glass-card rounded-[3rem] p-8 md:p-12 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700">
-        <div className="text-center mb-8">
+        <button 
+          onClick={onBack}
+          className="absolute top-8 left-8 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-deepAqua transition-colors flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+          Voltar ao site
+        </button>
+
+        <div className="text-center mb-8 mt-4">
           <div className="inline-flex w-16 h-16 neo-gradient rounded-2xl items-center justify-center text-white text-3xl font-bold shadow-xl shadow-babyBlue/40 mb-4">
             AM
           </div>
@@ -149,15 +156,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess }) => {
               Sou Paciente (Manaus)
             </button>
           </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-[11px] font-black uppercase text-slate-400 hover:text-deepAqua tracking-widest transition-colors"
-          >
-            {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já possui conta? Faça Login'}
-          </button>
         </div>
       </div>
     </div>

@@ -5,20 +5,21 @@ import AuthView from './components/AuthView';
 import DashboardContainer from './components/DashboardContainer';
 import Header from './components/Header';
 import NotificationPanel from './components/NotificationPanel';
+import LandingView from './components/LandingView';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<AppView>('AUTH');
+  const [view, setView] = useState<AppView>('LANDING');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Authentication persistence simulation
   useEffect(() => {
     const saved = localStorage.getItem('achei_med_user');
     if (saved) {
       const parsed = JSON.parse(saved);
       setUser(parsed);
-      setView('DASHBOARD');
+      // Mantemos LANDING como padrão mesmo se houver usuário, 
+      // para o usuário ver o site. O Header terá o botão de Dashboard.
     }
   }, []);
 
@@ -40,7 +41,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('achei_med_user');
-    setView('AUTH');
+    setView('LANDING');
   };
 
   const addNotification = (notif: Notification) => {
@@ -52,20 +53,21 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface selection:bg-aqua selection:text-deepAqua">
-      {view !== 'AUTH' && user && (
-        <Header 
-          user={user} 
-          onLogout={handleLogout} 
-          onViewChange={setView}
-          onToggleNotifs={() => setShowNotifications(!showNotifications)}
-          unreadCount={notifications.filter(n => !n.read).length}
-        />
-      )}
+    <div className="min-h-screen bg-white selection:bg-aqua selection:text-deepAqua">
+      <Header 
+        user={user} 
+        onLogout={handleLogout} 
+        onViewChange={setView}
+        onToggleNotifs={() => setShowNotifications(!showNotifications)}
+        unreadCount={notifications.filter(n => !n.read).length}
+        view={view}
+      />
 
       <main className="transition-all duration-500">
-        {view === 'AUTH' ? (
-          <AuthView onAuthSuccess={handleLogin} />
+        {view === 'LANDING' ? (
+          <LandingView onStartClick={() => setView('AUTH')} />
+        ) : view === 'AUTH' ? (
+          <AuthView onAuthSuccess={handleLogin} onBack={() => setView('LANDING')} />
         ) : (
           <DashboardContainer 
             user={user!} 
