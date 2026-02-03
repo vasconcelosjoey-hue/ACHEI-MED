@@ -23,6 +23,14 @@ export const translations: Record<Language, any> = {
       forgot: "Recuperar senha",
       demo: "Modo Demonstração"
     },
+    integrations: {
+      title: "Integrações Inteligentes",
+      googleDesc: "Sincronize sua agenda pessoal com o fluxo da clínica.",
+      connect: "Conectar Google Agenda",
+      connected: "Google Agenda Conectado",
+      syncing: "Sincronizando em tempo real...",
+      lastSync: "Última sincronização há 2 min"
+    },
     app: {
       welcome: "Dashboard AGENDA MED",
       today: "Agenda do Dia",
