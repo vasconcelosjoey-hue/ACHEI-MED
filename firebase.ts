@@ -12,26 +12,22 @@ const firebaseConfig = {
   appId: "1:000000000:web:demo"
 };
 
-// Singleton initialization pattern
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
+// Inicialização segura
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 let firestoreInstance: Firestore | null = null;
 try {
+  // Tentativa de obter a instância, mas sem quebrar o app se falhar
   firestoreInstance = getFirestore(app);
 } catch (error) {
-  console.error("Erro ao inicializar Firestore:", error);
+  console.warn("Firestore service not available. App running in offline/demo mode.");
 }
 
 export const db = firestoreInstance;
 
 export const saveLead = async (leadData: any) => {
   if (!db) {
-    console.warn("Firestore não disponível. Operando em modo demo.");
+    console.info("Simulando salvamento de lead (Modo Demo):", leadData);
     return { id: "demo-lead-" + Date.now() };
   }
 
@@ -43,7 +39,7 @@ export const saveLead = async (leadData: any) => {
     });
     return docRef;
   } catch (e) {
-    console.warn("Erro ao salvar lead (modo offline/demo):", e);
+    console.warn("Falha ao salvar no Firestore (usando fallback):", e);
     return { id: "demo-lead-" + Date.now() };
   }
 };

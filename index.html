@@ -4,12 +4,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Achei Med | Hub de Saúde Inteligente</title>
+    <title>AGENDA MED | Gestão de Saúde Futurista</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- ECharts para gráficos no Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script>
       tailwind.config = {
@@ -70,12 +69,12 @@
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
-    "react/": "https://esm.sh/react@19.0.0/",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "firebase/app": "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js",
+    "firebase/app": "https://esm.sh/firebase@11.0.1/app",
+    "firebase/firestore": "https://esm.sh/firebase@11.0.1/firestore",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "firebase/": "https://esm.sh/firebase@^12.8.0/"
   }
 }
@@ -83,7 +82,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- Script de entrada para inicializar o React -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

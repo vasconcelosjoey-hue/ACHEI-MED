@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
               AM
             </div>
             <span className="font-display font-bold text-2xl tracking-tighter bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-              Achei Med
+              AGENDA MED
             </span>
           </div>
 
@@ -57,7 +57,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
                 { label: t.problem, id: 'problema' },
                 { label: t.pillars, id: 'pilares' },
                 { label: t.comparison, id: 'comparativo' },
-                { label: t.testimonials, id: 'depoimentos' },
                 { label: t.contact, id: 'contato' },
               ].map((link) => (
                 <button 
@@ -68,25 +67,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
                   {link.label}
                 </button>
               ))}
-            </nav>
-          )}
-
-          {view !== 'LANDING' && user && (
-            <nav className="hidden md:flex items-center gap-1">
-              <button 
-                onClick={() => onViewChange('DASHBOARD')}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-babyBlue/10 transition-all"
-              >
-                Dashboard
-              </button>
-              {user.role === 'PATIENT' && (
-                <button 
-                  onClick={() => onViewChange('SEARCH')}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-babyBlue/10 transition-all"
-                >
-                  Buscar Médicos
-                </button>
-              )}
             </nav>
           )}
         </div>
