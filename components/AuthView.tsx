@@ -16,7 +16,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const demoAccounts = {
     PHYSICIAN: {
       name: 'Dr. Arlindo Jr.',
-      email: 'arlindo@acheimed.com.br',
+      email: 'arlindo@agendamed.com.br',
       role: 'PHYSICIAN' as UserRole,
       avatar: 'https://i.pravatar.cc/150?u=arlindo'
     },
@@ -75,7 +75,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           <div className="inline-flex w-16 h-16 neo-gradient rounded-2xl items-center justify-center text-white text-3xl font-bold shadow-xl shadow-babyBlue/40 mb-4">
             AM
           </div>
-          <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight">Achei Med</h1>
+          <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight">AGENDA MED</h1>
           <p className="text-slate-500 font-medium mt-2">Manaus: Gestão Inteligente em Saúde</p>
         </div>
 

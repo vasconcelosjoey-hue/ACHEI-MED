@@ -62,7 +62,7 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   const getPhysicianName = (id: string) => MOCK_PHYSICIANS.find(p => p.id === id)?.name || '-';
 
   const sendWhatsApp = (app: Appointment) => {
-    const msg = `Olá ${app.patientName}, confirmamos sua consulta no Achei Med para as ${app.time} com ${getPhysicianName(app.physicianId)}. Podemos confirmar?`;
+    const msg = `Olá ${app.patientName}, confirmamos sua consulta no AGENDA MED para as ${app.time} com ${getPhysicianName(app.physicianId)}. Podemos confirmar?`;
     window.open(`https://wa.me/55${app.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 

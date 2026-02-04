@@ -5,9 +5,9 @@ import { getFirestore, collection, addDoc, serverTimestamp, Firestore } from "fi
 // CONFIGURAÇÃO DE DEMONSTRAÇÃO
 const firebaseConfig = {
   apiKey: "DEMO_MODE_KEY",
-  authDomain: "achei-med.firebaseapp.com",
-  projectId: "achei-med",
-  storageBucket: "achei-med.appspot.com",
+  authDomain: "agenda-med.firebaseapp.com",
+  projectId: "agenda-med",
+  storageBucket: "agenda-med.appspot.com",
   messagingSenderId: "000000000",
   appId: "1:000000000:web:demo"
 };

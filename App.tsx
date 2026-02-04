@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('achei_med_user');
+    const saved = localStorage.getItem('agenda_med_user');
     if (saved) {
       const parsed = JSON.parse(saved);
       setUser(parsed);
@@ -25,7 +25,7 @@ const App: React.FC = () => {
 
   const handleLogin = (loggedUser: User) => {
     setUser(loggedUser);
-    localStorage.setItem('achei_med_user', JSON.stringify(loggedUser));
+    localStorage.setItem('agenda_med_user', JSON.stringify(loggedUser));
     setView('DASHBOARD');
     addNotification({
       id: Math.random().toString(),
@@ -40,7 +40,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('achei_med_user');
+    localStorage.removeItem('agenda_med_user');
     setView('LANDING');
   };
 

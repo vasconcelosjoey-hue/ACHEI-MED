@@ -51,7 +51,7 @@ const Hero: React.FC<HeroProps> = ({ t, onCtaClick }) => {
           <div className="relative overflow-hidden rounded-[3rem] shadow-2xl border-[16px] border-white ring-1 ring-slate-100">
             <img 
               src={CONSTANTS.HERO_IMAGE} 
-              alt="Achei Med Healthcare Management" 
+              alt="AGENDA MED Healthcare Management" 
               className="w-full h-full object-cover aspect-[4/3] transition-all duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>

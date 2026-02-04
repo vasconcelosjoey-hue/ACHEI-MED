@@ -10,10 +10,10 @@ export const CONSTANTS = {
   P3_IMAGE: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2070',
   TEST1_IMAGE: 'https://i.pravatar.cc/150?u=dr1',
   TEST2_IMAGE: 'https://i.pravatar.cc/150?u=dr2',
-  QR_CODE_URL: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://acheimed.app',
-  LINK_APP: 'https://acheimed.app/download',
-  LINK_DEMO: 'https://calendly.com/acheimed/demo',
-  LINK_WHATS: 'https://wa.me/5511999999999',
+  QR_CODE_URL: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://agendamed.app',
+  LINK_APP: 'https://agendamed.app/download',
+  LINK_DEMO: 'https://calendly.com/agendamed/demo',
+  LINK_WHATS: 'https://wa.me/559293022840?text=quero%20preencher%20minha%20agenda%20m%C3%A9dica!',
   PRIV_URL: '#',
   TERMS_URL: '#'
 };
