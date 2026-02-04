@@ -76,12 +76,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
                 >
                   Dashboard
                 </button>
-                <button 
-                  onClick={() => onViewChange('ACRE_DIRECTORY')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'ACRE_DIRECTORY' ? 'text-deepAqua bg-aqua/10' : 'text-slate-500 hover:text-deepAqua'}`}
-                >
-                  {t.acre}
-                </button>
              </nav>
           )}
         </div>

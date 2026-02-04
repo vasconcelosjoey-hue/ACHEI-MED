@@ -1,6 +1,6 @@
 
 export type UserRole = 'PATIENT' | 'PHYSICIAN' | 'ATTENDANT' | 'INSTITUTION';
-export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH' | 'ACRE_DIRECTORY';
+export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
 export type Language = 'pt-BR' | 'en';
 
 export const CONSTANTS = {
@@ -24,17 +24,6 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
-}
-
-export interface Institution {
-  id: string;
-  cidade: string;
-  nome: string;
-  tipo: string;
-  cursos: string[];
-  endereco: string;
-  contato: string;
-  website: string;
 }
 
 export interface Physician {
@@ -65,18 +54,8 @@ export const MOCK_PHYSICIANS: Physician[] = [
   { id: 'phy4', name: 'Dra. Acreana Silva', specialty: 'Medicina da Família', city: 'Rio Branco', plans: ['Unimed', 'Sus'], avatar: 'https://i.pravatar.cc/150?u=acreana' }
 ];
 
-export const MOCK_INSTITUTIONS_ACRE: Institution[] = [
-  { id: 'ac1', cidade: 'Rio Branco', nome: 'UFAC - Sede', tipo: 'Pública (Federal)', cursos: ['Medicina', 'Enfermagem', 'Nutrição', 'Ed. Física', 'C. Biológicas', 'Med. Veterinária'], endereco: 'Rodovia BR-364, Km 04 - Distrito Industrial', contato: '(68) 3901-2500', website: 'ufac.br' },
-  { id: 'ac2', cidade: 'Cruzeiro do Sul', nome: 'UFAC - Campus Floresta', tipo: 'Pública (Federal)', cursos: ['Enfermagem', 'C. Biológicas', 'Engenharia Agronômica'], endereco: 'Estrada do Canela Fina, Km 12', contato: '(68) 3311-2500', website: 'ufac.br/site/campus/floresta' },
-  { id: 'ac3', cidade: 'Rio Branco', nome: 'IFAC - Rio Branco', tipo: 'Pública (Federal)', cursos: ['C. Biológicas', 'Engenharia Agronômica'], endereco: 'Rodovia AC-01, Km 02', contato: '(68) 2106-6800', website: 'ifac.edu.br' },
-  { id: 'ac4', cidade: 'Sena Madureira', nome: 'IFAC - Sena Madureira', tipo: 'Pública (Federal)', cursos: ['C. Biológicas', 'Zootecnia'], endereco: 'Rua Pedro Rodrigues de Souza, s/n', contato: '(68) 3323-2615', website: 'ifac.edu.br' },
-  { id: 'ac5', cidade: 'Rio Branco', nome: 'Uninorte', tipo: 'Privada', cursos: ['Medicina', 'Odontologia', 'Fisioterapia', 'Biomedicina'], endereco: 'Alameda Polônia, 1235', contato: '(68) 3302-7000', website: 'uninorteac.com.br' },
-  { id: 'ac6', cidade: 'Cruzeiro do Sul', nome: 'Afya Cruzeiro do Sul', tipo: 'Privada', cursos: ['Medicina'], endereco: 'Rodovia AC-405, Km 01', contato: '(68) 3322-1234', website: 'cruzeirodosul.afya.com.br' }
-];
-
 export const MOCK_PHYSICIANS_MANAUS: Physician[] = MOCK_PHYSICIANS;
 
-// Fix for DashboardView.tsx: Add exported member MOCK_APPOINTMENTS
 export const MOCK_APPOINTMENTS: Appointment[] = [
   { id: '1', physicianId: 'phy1', patientName: 'Ana Silva', email: 'ana@email.com', whatsapp: '(11) 99999-9999', time: '09:00', status: 'confirmed' },
   { id: '2', physicianId: 'phy2', patientName: 'Bruno Costa', email: 'bruno@email.com', whatsapp: '(11) 98888-8888', time: '10:30', status: 'pending' }

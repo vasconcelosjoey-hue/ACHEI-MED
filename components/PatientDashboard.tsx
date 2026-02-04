@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, AppView, Notification, MOCK_DATA, MOCK_PHYSICIANS_MANAUS, MOCK_INSTITUTIONS_ACRE, Institution } from '../types';
+import { User, AppView, Notification, MOCK_DATA, MOCK_PHYSICIANS_MANAUS } from '../types';
 import { translations } from '../translations';
 
 interface PatientDashboardProps {
@@ -19,20 +19,11 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
   const [bookingStep, setBookingStep] = useState<'IDLE' | 'SELECTING_TIME'>('IDLE');
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
 
-  // Acre Directory States
-  const [acreSearch, setAcreSearch] = useState('');
-  const [acreCityFilter, setAcreCityFilter] = useState('');
-
   const filteredDoctors = MOCK_PHYSICIANS_MANAUS.filter(d => 
     (search === '' || d.name.toLowerCase().includes(search.toLowerCase())) &&
     (filters.specialty === '' || d.specialty === filters.specialty) &&
     (filters.city === '' || d.city === filters.city) &&
     (filters.plan === '' || d.plans.includes(filters.plan))
-  );
-
-  const filteredAcre = MOCK_INSTITUTIONS_ACRE.filter(inst => 
-    (acreSearch === '' || inst.nome.toLowerCase().includes(acreSearch.toLowerCase()) || inst.cursos.some(c => c.toLowerCase().includes(acreSearch.toLowerCase()))) &&
-    (acreCityFilter === '' || inst.cidade === acreCityFilter)
   );
 
   const handleBookingStart = (doc: any) => {
@@ -57,86 +48,6 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
       });
     }, 1500);
   };
-
-  if (view === 'ACRE_DIRECTORY') {
-    return (
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-4">
-             <button onClick={() => setView('DASHBOARD')} className="p-3 bg-slate-100 rounded-full hover:bg-slate-200 transition-all">
-                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-             </button>
-             <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight">{t.acre.title}</h1>
-          </div>
-          <p className="text-slate-500 font-medium">{t.acre.subtitle}</p>
-        </div>
-
-        <div className="grid lg:grid-cols-4 gap-8">
-          <aside className="space-y-6">
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm sticky top-24">
-              <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 px-2">Filtros (Acre)</h3>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.acre.cityFilter}</label>
-                  <select 
-                    value={acreCityFilter}
-                    onChange={(e) => setAcreCityFilter(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm focus:ring-2 focus:ring-aqua/20 outline-none transition-all"
-                  >
-                    <option value="">Todas</option>
-                    {Array.from(new Set(MOCK_INSTITUTIONS_ACRE.map(i => i.cidade))).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <section className="lg:col-span-3 space-y-8">
-            <div className="relative">
-              <input 
-                type="text" 
-                value={acreSearch}
-                onChange={(e) => setAcreSearch(e.target.value)}
-                placeholder={t.acre.searchPlaceholder}
-                className="w-full h-16 pl-14 pr-6 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 outline-none focus:ring-2 focus:ring-babyBlue/30 text-slate-700 transition-all font-medium"
-              />
-              <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </div>
-
-            <div className="grid gap-6">
-              {filteredAcre.map(inst => (
-                <div key={inst.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group grid md:grid-cols-3 gap-8">
-                  <div className="md:col-span-2 space-y-4">
-                    <div className="flex items-start justify-between">
-                       <div>
-                         <span className="text-[10px] font-black uppercase text-babyBlue bg-babyBlue/10 px-2 py-1 rounded mb-2 inline-block tracking-widest">{inst.tipo}</span>
-                         <h3 className="text-2xl font-display font-bold text-slate-900">{inst.nome}</h3>
-                         <p className="text-sm text-slate-500 font-medium flex items-center gap-2 mt-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            {inst.cidade} • {inst.endereco}
-                         </p>
-                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.acre.courses}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {inst.cursos.map(c => <span key={c} className="px-3 py-1 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100">{c}</span>)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 p-6 rounded-3xl flex flex-col justify-center gap-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.acre.contact}</p>
-                    <p className="text-sm font-bold text-slate-900">{inst.contato}</p>
-                    <a href={`https://${inst.website}`} target="_blank" className="text-sm font-bold text-deepAqua hover:underline">{inst.website}</a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </div>
-    );
-  }
 
   if (view === 'SEARCH') {
     return (
@@ -276,12 +187,6 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
           <p className="text-slate-500 font-medium italic">"Cuidando da sua saúde no Norte com tecnologia."</p>
         </div>
         <div className="flex gap-4">
-          <button 
-            onClick={() => setView('ACRE_DIRECTORY')}
-            className="flex items-center gap-3 px-8 py-4 bg-slate-900 rounded-2xl text-white font-bold shadow-xl transform hover:-translate-y-1 transition-all"
-          >
-            Faculdades Acre (AC)
-          </button>
           <button 
             onClick={() => setView('SEARCH')}
             className="flex items-center gap-3 px-8 py-4 neo-gradient rounded-2xl text-white font-bold shadow-xl shadow-babyBlue/40 transform hover:-translate-y-1 transition-all"

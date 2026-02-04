@@ -12,8 +12,7 @@ export const translations: Record<Language, any> = {
       start: "Como Começar",
       contact: "Contato",
       cta: "Entrar no Sistema",
-      back: "Voltar para o Site",
-      acre: "Faculdades Acre (AC)"
+      back: "Voltar para o Site"
     },
     login: {
       title: "Portal AGENDA MED",
@@ -36,15 +35,6 @@ export const translations: Record<Language, any> = {
       permissions: ["Ver seus calendários", "Adicionar consultas novas", "Bloquear horários ocupados"],
       allow: "Permitir Acesso",
       deny: "Cancelar"
-    },
-    acre: {
-      title: "Diretório Mestre de Faculdades e Cursos: Acre (AC)",
-      subtitle: "Levantamento exaustivo de instituições com foco em Saúde, Biológicas e Engenharias.",
-      searchPlaceholder: "Buscar por instituição ou curso...",
-      cityFilter: "Cidade",
-      typeFilter: "Tipo",
-      courses: "Cursos Oferecidos",
-      contact: "Contato & Website"
     },
     app: {
       welcome: "Dashboard AGENDA MED",
@@ -162,11 +152,10 @@ export const translations: Record<Language, any> = {
     }
   },
   'en': {
-    nav: { cta: "System Login", back: "To Website", acre: "Acre Colleges" },
+    nav: { cta: "System Login", back: "To Website" },
     login: { title: "AGENDA MED Portal", subtitle: "Smart management", button: "Token Login" },
     app: { welcome: "AGENDA MED Dashboard", register: "New Appointment" },
     hero: { comingSoon: "Coming Soon!" },
-    bridge: { title: "Bridge to Care", phrase: "Connecting health and technology." },
-    acre: { title: "College Directory: Acre (AC)", subtitle: "Exhaustive survey of higher education institutions." }
+    bridge: { title: "Bridge to Care", phrase: "Connecting health and technology." }
   }
 };
