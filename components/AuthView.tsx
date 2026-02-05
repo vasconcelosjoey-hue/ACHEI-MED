@@ -14,20 +14,34 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerificationSent, setIsVerificationSent] = useState(false);
+  
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
-    password: '', 
-    address: '',
+    password: '',
+    crm: '',
+    whatsapp: '',
     specialty: '',
+    street: '',
+    number: '',
+    neighborhood: '',
+    zip: '',
     plans: [] as string[]
   });
+
+  const togglePlan = (plan: string) => {
+    setFormData(prev => ({
+      ...prev,
+      plans: prev.plans.includes(plan) 
+        ? prev.plans.filter(p => p !== plan) 
+        : [...prev.plans, plan]
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulação de Integração Firebase Auth
     setTimeout(() => {
       setIsLoading(false);
       if (!isLogin) {
@@ -35,10 +49,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       } else {
         const mockUser: User = {
           id: Math.random().toString(36).substr(2, 9),
-          name: formData.name || 'Usuário AGENDA MED',
+          name: formData.name || 'Usuário',
           email: formData.email,
           role: role,
-          verified: true
+          verified: true,
+          whatsapp: formData.whatsapp,
+          specialty: formData.specialty,
+          plans: formData.plans
         };
         onAuthSuccess(mockUser);
       }
@@ -47,132 +64,120 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
   if (isVerificationSent) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center animate-in zoom-in-95 flex-grow-0">
+      <div className="h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
           <div className="w-20 h-20 bg-aqua/20 text-deepAqua rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">✉️</div>
-          <h2 className="text-2xl font-display font-bold text-slate-900 mb-4">{t.verificationSent}</h2>
-          <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-            {t.verificationDesc}
-          </p>
-          <button 
-            onClick={() => setIsVerificationSent(false)} 
-            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
-          >
-            {t.backToLogin}
-          </button>
+          <h2 className="text-2xl font-display font-bold text-slate-900 mb-4">Verifique seu E-mail</h2>
+          <p className="text-slate-500 text-sm mb-8 leading-relaxed">Enviamos um link para <strong>{formData.email}</strong> para confirmar seu acesso profissional.</p>
+          <button onClick={() => setIsVerificationSent(false)} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold">Voltar ao Login</button>
         </div>
-        <footer className="mt-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
-           {t.footer}
-        </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden bg-slate-50">
-      <div className="absolute top-[-10%] left-[-10%] w-1/2 h-1/2 bg-babyBlue/20 rounded-full blur-[120px]"></div>
+    <div className="h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-slate-50">
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-babyBlue/20 via-transparent to-transparent"></div>
       
-      <div className="w-full max-w-xl bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700 overflow-y-auto max-h-[85vh] scrollbar-hide">
-        <button 
-          onClick={onBack}
-          className="absolute top-6 left-6 md:top-8 md:left-8 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-deepAqua transition-colors flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-          Sair
-        </button>
-
-        <div className="text-center mb-6 mt-4">
-          <div className="inline-flex w-12 h-12 md:w-16 md:h-16 neo-gradient rounded-2xl items-center justify-center text-white text-2xl md:text-3xl font-bold shadow-xl mb-4">AM</div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-slate-900 tracking-tight">AGENDA MED</h1>
-        </div>
-
-        <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
-          {(['PATIENT', 'PHYSICIAN'] as UserRole[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => { setRole(r); setIsLogin(true); }}
-              className={`flex-1 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${role === r ? 'bg-white text-deepAqua shadow-sm' : 'text-slate-400'}`}
-            >
-              {r === 'PATIENT' ? 'Paciente' : 'Médico'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.name}</label>
-              <input 
-                required
-                type="text" 
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Ex: Carolina Lima"
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-aqua/20 transition-all"
-              />
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.email}</label>
-            <input 
-              required
-              type="email" 
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              placeholder="seu@email.com"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-aqua/20 transition-all"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.password}</label>
-            <input 
-              required
-              type="password" 
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              placeholder="••••••••"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-aqua/20 transition-all"
-            />
-          </div>
-
-          {role === 'PHYSICIAN' && !isLogin && (
-            <div className="space-y-1 animate-in slide-in-from-top-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Especialidade</label>
-              <select 
-                required
-                value={formData.specialty}
-                onChange={(e) => setFormData({...formData, specialty: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none"
+      <div className="w-full max-w-2xl bg-white rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative z-10 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center mb-6">
+          <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-deepAqua transition-all flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+            Voltar
+          </button>
+          <div className="flex p-1 bg-slate-100 rounded-xl">
+            {(['PATIENT', 'PHYSICIAN', 'ATTENDANT'] as UserRole[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => { setRole(r); setIsLogin(true); }}
+                className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${role === r ? 'bg-white text-deepAqua shadow-sm' : 'text-slate-400'}`}
               >
-                <option value="">Selecione...</option>
-                {MOCK_DATA.SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          )}
+                {r === 'PATIENT' ? 'Paciente' : r === 'PHYSICIAN' ? 'Médico' : 'Atendente'}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full neo-gradient py-4 rounded-xl font-bold text-white shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center"
-          >
-            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? t.login : t.register)}
+        <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto pr-2 scrollbar-hide">
+          <div className="text-center mb-4">
+            <h1 className="text-3xl font-display font-bold text-slate-900">{isLogin ? 'Bem-vindo de volta' : 'Crie sua Conta'}</h1>
+            <p className="text-slate-500 text-sm">{role === 'PHYSICIAN' ? 'Portal do Especialista' : 'Portal do Paciente'}</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {!isLogin && (
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-aqua/20" />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
+              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
+              <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+            </div>
+
+            {!isLogin && role === 'PHYSICIAN' && (
+              <>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">CRM</label>
+                  <input required type="text" placeholder="00000-UF" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">WhatsApp Profissional</label>
+                  <input required type="tel" placeholder="(00) 00000-0000" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+                </div>
+                <div className="md:col-span-2 space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Especialidade</label>
+                  <select required value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none">
+                    <option value="">Selecione...</option>
+                    {MOCK_DATA.SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2 grid grid-cols-3 gap-3">
+                   <div className="col-span-2 space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Rua / Av</label>
+                      <input required type="text" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Número</label>
+                      <input required type="text" value={formData.number} onChange={e => setFormData({...formData, number: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none" />
+                   </div>
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Convênios Atendidos</label>
+                   <div className="flex flex-wrap gap-2">
+                      {MOCK_DATA.PLANS.map(p => (
+                        <button key={p} type="button" onClick={() => togglePlan(p)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${formData.plans.includes(p) ? 'bg-deepAqua text-white border-deepAqua' : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-aqua'}`}>
+                          {p}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <button type="submit" disabled={isLoading} className="w-full neo-gradient py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center">
+            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar' : 'Finalizar Cadastro Profissional')}
           </button>
           
-          <button 
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua transition-colors"
-          >
-            {isLogin ? t.noAccount : t.hasAccount}
+          <button type="button" onClick={() => setIsLogin(!isLogin)} className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua transition-colors">
+            {isLogin ? 'Não tem conta? Começar Agora' : 'Já tem conta? Fazer Login'}
           </button>
         </form>
+
+        <footer className="mt-6 pt-4 border-t border-slate-50 text-center text-[9px] font-black uppercase tracking-widest text-slate-300">
+           Powered By Agenda Med | Todos os direitos reservados 2026
+        </footer>
       </div>
-      
-      <footer className="mt-8 text-[10px] font-black uppercase tracking-widest text-slate-400 relative z-10">
-        {t.footer}
-      </footer>
     </div>
   );
 };
