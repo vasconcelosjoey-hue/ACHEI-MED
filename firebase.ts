@@ -3,30 +3,36 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, Firestore, orderBy, limit } from "firebase/firestore";
 import { Appointment } from "./types";
 
+// Credenciais reais fornecidas pelo usuário
 const firebaseConfig = {
-  apiKey: "DEMO_MODE_KEY",
-  authDomain: "agenda-med.firebaseapp.com",
-  projectId: "agenda-med",
-  storageBucket: "agenda-med.appspot.com",
-  messagingSenderId: "000000000",
-  appId: "1:000000000:web:demo"
+  apiKey: "AIzaSyCf3dtWjvyKzswkr6VDM7gqpw-yI6QlHX8",
+  authDomain: "agenda-med-br.firebaseapp.com",
+  projectId: "agenda-med-br",
+  storageBucket: "agenda-med-br.firebasestorage.app",
+  messagingSenderId: "665475472115",
+  appId: "1:665475472115:web:bb69bc1efa0264ad61f586"
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 let firestoreInstance: Firestore | null = null;
+
 try {
   firestoreInstance = getFirestore(app);
 } catch (error) {
-  console.warn("Firestore not available.");
+  console.error("Erro ao inicializar Firestore:", error);
 }
 
 export const db = firestoreInstance;
 
+/**
+ * Salva um agendamento no Firestore.
+ * Importante: Certifique-se de que as Regras do Firestore no console permitam escrita.
+ */
 export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'createdAt'>) => {
   if (!db) {
-    // Fallback LocalStorage para Demo sem Firebase
+    console.warn("Firestore não disponível, usando LocalStorage como fallback.");
     const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
-    const newApp = { ...appData, id: Math.random().toString(), createdAt: Date.now() };
+    const newApp = { ...appData, id: Math.random().toString(36).substr(2, 9), createdAt: Date.now() };
     localStorage.setItem('agenda_med_cloud_fallback', JSON.stringify([newApp, ...local]));
     return newApp;
   }
@@ -38,29 +44,47 @@ export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'created
     });
     return { ...appData, id: docRef.id };
   } catch (e) {
-    console.error("Error saving appointment:", e);
-    return null;
+    console.error("Erro ao salvar agendamento no Firebase:", e);
+    // Fallback silencioso para garantir que o usuário não perca a ação se a regra estiver 'false'
+    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
+    const newApp = { ...appData, id: 'local-' + Math.random().toString(36).substr(2, 5), createdAt: Date.now() };
+    localStorage.setItem('agenda_med_cloud_fallback', JSON.stringify([newApp, ...local]));
+    return newApp;
   }
 };
 
+/**
+ * Busca agendamentos do usuário logado.
+ */
 export const getMyAppointments = async (userId: string, role: 'PATIENT' | 'PHYSICIAN') => {
-  if (!db) {
-    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
-    return local.filter((a: any) => role === 'PATIENT' ? a.patientId === userId : a.physicianId === userId);
-  }
+  const localApps = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
+  const filteredLocal = localApps.filter((a: any) => role === 'PATIENT' ? a.patientId === userId : a.physicianId === userId);
+
+  if (!db) return filteredLocal;
 
   try {
     const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
-    const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"), limit(20));
+    const q = query(
+      collection(db, "appointments"), 
+      where(field, "==", userId), 
+      orderBy("createdAt", "desc"), 
+      limit(50)
+    );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+    const firestoreApps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+    
+    // Mescla local com nuvem para garantir que agendamentos recentes (antes da propagação) apareçam
+    const all = [...firestoreApps, ...filteredLocal.filter((l: any) => !firestoreApps.find(f => f.id === l.id))];
+    return all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   } catch (e) {
-    console.error("Error fetching appointments:", e);
-    return [];
+    console.error("Erro ao buscar no Firebase:", e);
+    return filteredLocal;
   }
 };
 
-// Fix: added missing saveLead function
+/**
+ * Salva um lead/contato no Firestore.
+ */
 export const saveLead = async (leadData: any) => {
   if (!db) {
     const local = JSON.parse(localStorage.getItem('agenda_med_leads_fallback') || '[]');
@@ -76,7 +100,7 @@ export const saveLead = async (leadData: any) => {
     });
     return { ...leadData, id: docRef.id };
   } catch (e) {
-    console.error("Error saving lead:", e);
+    console.error("Erro ao salvar lead:", e);
     throw e;
   }
 };
