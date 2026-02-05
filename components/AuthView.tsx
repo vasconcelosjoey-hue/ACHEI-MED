@@ -7,7 +7,9 @@ import {
   signInWithEmailAndPassword, 
   sendEmailVerification,
   signOut,
-  signInWithPopup
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 
 interface AuthViewProps {
@@ -31,36 +33,59 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const isPatient = role === 'PATIENT';
 
   useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result) {
+        setIsLoading(true);
+        await handleAuthResult(result.user);
+        setIsLoading(false);
+      }
+    }).catch((err) => {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(`Erro no redirecionamento: ${err.code}`);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     setError('');
   }, [isLogin, role]);
+
+  const handleAuthResult = async (fbUser: any) => {
+    let profile = await getUserProfile(fbUser.uid);
+    if (!profile) {
+      profile = {
+        id: fbUser.uid,
+        name: fbUser.displayName || 'Usuário Google',
+        email: fbUser.email || '',
+        role: role,
+        avatar: fbUser.photoURL || undefined,
+        verified: true
+      };
+      await saveUserProfile(fbUser.uid, profile);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError('');
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      
-      // Verifica se o perfil já existe no Firestore
-      let profile = await getUserProfile(fbUser.uid);
-      
-      if (!profile) {
-        // Se for novo, cria um perfil básico de Paciente (ou Médico se for o caso)
-        profile = {
-          id: fbUser.uid,
-          name: fbUser.displayName || 'Usuário Google',
-          email: fbUser.email || '',
-          role: role, // Usa a role selecionada no switch da tela
-          avatar: fbUser.photoURL || undefined,
-          verified: true
-        };
-        await saveUserProfile(fbUser.uid, profile);
-      }
-      
-      // O App.tsx via onAuthStateChanged cuidará do redirecionamento
+      await handleAuthResult(result.user);
     } catch (err: any) {
-      console.error("Google Auth Error:", err);
-      setError('Falha ao autenticar com Google. Tente novamente.');
+      console.error("Google Auth Error:", err.code, err.message);
+      
+      const currentDomain = window.location.hostname;
+
+      if (err.code === 'auth/popup-blocked') {
+        setError('O navegador bloqueou o pop-up. Tentando via redirecionamento...');
+        await signInWithRedirect(auth, googleProvider);
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError(`DOMÍNIO NÃO AUTORIZADO! No Firebase, adicione o domínio: ${currentDomain}`);
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('Você fechou a janela de login antes de completar.');
+      } else {
+        setError(`Erro: ${err.code}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +99,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         setResendStatus('E-mail reenviado com sucesso!');
         setTimeout(() => setResendStatus(''), 3000);
       } catch (err: any) {
-        setResendStatus('Erro ao reenviar. Tente novamente mais tarde.');
+        setResendStatus('Erro ao reenviar.');
       }
     }
   };
@@ -87,7 +112,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     try {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        
         if (!cred.user.emailVerified) {
           setError('Sua conta ainda não foi verificada. Verifique seu e-mail.');
           await signOut(auth);
@@ -114,12 +138,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         await signOut(auth);
       }
     } catch (err: any) {
-      switch (err.code) {
-        case 'auth/invalid-credential': setError('E-mail ou senha incorretos.'); break;
-        case 'auth/email-already-in-use': setError('Este e-mail já está cadastrado.'); break;
-        case 'auth/weak-password': setError('A senha deve ter pelo menos 6 caracteres.'); break;
-        default: setError('Ocorreu um erro inesperado. Tente novamente.');
-      }
+      setError(err.code === 'auth/invalid-credential' ? 'E-mail ou senha incorretos.' : `Erro: ${err.code}`);
     } finally {
       setIsLoading(false);
     }
@@ -131,9 +150,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
            <div className="w-24 h-24 bg-aqua/20 text-deepAqua rounded-full flex items-center justify-center text-4xl mx-auto mb-8 animate-bounce">✉️</div>
            <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">Verifique seu E-mail</h2>
-           <p className="text-slate-500 mb-8 leading-relaxed">
-             Link enviado para <strong>{formData.email}</strong>.
-           </p>
+           <p className="text-slate-500 mb-8 leading-relaxed">Link enviado para <strong>{formData.email}</strong>.</p>
            <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl">Ir para Login</button>
            <div className="mt-6">
               <button onClick={handleResendEmail} disabled={!!resendStatus} className="text-[10px] font-black uppercase text-deepAqua underline tracking-widest">{resendStatus || 'Reenviar E-mail'}</button>
