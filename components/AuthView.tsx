@@ -117,20 +117,17 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, formData.email, formData.password);
         if (!cred.user.emailVerified) {
-          setError('Sua conta ainda não foi verificada. Verifique seu e-mail.');
+          setError('Sua conta ainda não foi verificada. Verifique seu e-mail (inclusive no SPAM).');
           await signOut(auth);
           setIsLoading(false);
           return;
         }
       } else {
-        // 1. Cria a conta no Authentication
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
         try {
-          // 2. Envia e-mail de verificação
           await sendEmailVerification(cred.user);
           
-          // 3. Tenta salvar no Firestore
           const profile: Partial<User> = {
             id: cred.user.uid,
             name: formData.name,
@@ -146,14 +143,9 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           setVerificationSent(true);
           await signOut(auth);
         } catch (dbErr: any) {
-          // Se falhar o banco de dados, removemos o usuário do Auth para permitir tentar de novo
-          console.error("Firestore error, cleaning up auth user:", dbErr);
-          if (dbErr.message.includes('permission-denied')) {
-             setError('ACESSO NEGADO AO BANCO: Você precisa ativar as REGRAS (Rules) do Firestore no console do Firebase.');
-          } else {
-             setError(`Erro no banco: ${dbErr.code}`);
-          }
+          console.error("Error saving user:", dbErr);
           await deleteUser(cred.user);
+          setError('Erro ao criar perfil. Verifique as permissões do banco de dados.');
         }
       }
     } catch (err: any) {
@@ -172,13 +164,30 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   if (verificationSent) {
     return (
       <div className="h-screen flex items-center justify-center p-6 bg-slate-50">
-        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
-           <div className="w-24 h-24 bg-aqua/20 text-deepAqua rounded-full flex items-center justify-center text-4xl mx-auto mb-8 animate-bounce">✉️</div>
-           <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">Verifique seu E-mail</h2>
-           <p className="text-slate-500 mb-8 leading-relaxed">Link enviado para <strong>{formData.email}</strong>.</p>
-           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl">Ir para Login</button>
-           <div className="mt-6">
-              <button onClick={handleResendEmail} disabled={!!resendStatus} className="text-[10px] font-black uppercase text-deepAqua underline tracking-widest">{resendStatus || 'Reenviar E-mail'}</button>
+        <div className="max-w-md w-full bg-white rounded-[3.5rem] p-10 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
+           <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-8 animate-bounce shadow-inner">✉️</div>
+           <h2 className="text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">E-mail de Ativação Enviado!</h2>
+           <p className="text-slate-500 mb-6 leading-relaxed">
+             Enviamos um link de confirmação para:<br/>
+             <strong className="text-slate-900">{formData.email}</strong>
+           </p>
+           
+           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8 text-left">
+              <p className="text-[10px] font-black uppercase text-amber-600 tracking-widest mb-1">Dica Importante</p>
+              <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                Caso não encontre na sua Caixa de Entrada em 1 minuto, verifique a pasta de <strong>Lixo Eletrônico ou SPAM</strong>.
+              </p>
+           </div>
+
+           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold shadow-xl hover:bg-slate-800 transition-all active:scale-95">Ir para o Login</button>
+           
+           <div className="mt-8 flex flex-col gap-4">
+              <button onClick={handleResendEmail} disabled={!!resendStatus} className="text-[10px] font-black uppercase text-deepAqua hover:underline tracking-widest">
+                {resendStatus || 'Não recebeu? Reenviar E-mail'}
+              </button>
+              <button onClick={() => { setVerificationSent(false); setIsLogin(false); }} className="text-[10px] font-black uppercase text-slate-300 hover:text-slate-500 tracking-widest">
+                Corrigir E-mail digitado
+              </button>
            </div>
         </div>
       </div>
