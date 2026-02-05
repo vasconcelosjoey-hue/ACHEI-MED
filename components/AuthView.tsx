@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { UserRole, User } from '../types';
+import { UserRole, User, MOCK_DATA } from '../types';
 
 interface AuthViewProps {
   onAuthSuccess: (user: User) => void;
@@ -11,20 +11,32 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const [role, setRole] = useState<UserRole>('PATIENT');
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    address: '',
+    specialty: '',
+    plans: [] as string[]
+  });
 
   const demoAccounts = {
     PHYSICIAN: {
       name: 'Dr. Arlindo Jr.',
       email: 'arlindo@agendamed.com.br',
       role: 'PHYSICIAN' as UserRole,
-      avatar: 'https://i.pravatar.cc/150?u=arlindo'
+      avatar: 'https://i.pravatar.cc/150?u=arlindo',
+      address: 'Av. Djalma Batista, 1661 - Chapada, Manaus',
+      lat: -3.1019,
+      lng: -60.0250
     },
     PATIENT: {
       name: 'Thiago Amazon',
       email: 'thiago@paciente.com.br',
       role: 'PATIENT' as UserRole,
-      avatar: 'https://i.pravatar.cc/150?u=thiago'
+      avatar: 'https://i.pravatar.cc/150?u=thiago',
+      lat: -3.1100,
+      lng: -60.0300
     }
   };
 
@@ -40,6 +52,15 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     }, 1000);
   };
 
+  const handlePlanToggle = (plan: string) => {
+    setFormData(prev => ({
+      ...prev,
+      plans: prev.plans.includes(plan) 
+        ? prev.plans.filter(p => p !== plan) 
+        : [...prev.plans, plan]
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -50,7 +71,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         name: formData.name || (role === 'PHYSICIAN' ? 'Dr. Arlindo Jr.' : 'Thiago Amazon'),
         email: formData.email,
         role: role,
-        avatar: undefined
+        avatar: undefined,
+        address: formData.address || (role === 'PHYSICIAN' ? 'Av. Djalma Batista, 1661' : undefined),
+        lat: role === 'PHYSICIAN' ? -3.1019 : -3.1100,
+        lng: role === 'PHYSICIAN' ? -60.0250 : -60.0300
       };
       setIsLoading(false);
       onAuthSuccess(mockUser);
@@ -58,7 +82,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-slate-50 pt-24">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-slate-50 pt-24 pb-12">
       <div className="absolute top-[-10%] left-[-10%] w-1/2 h-1/2 bg-babyBlue/30 rounded-full blur-[120px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-1/2 h-1/2 bg-aqua/30 rounded-full blur-[120px] animate-pulse"></div>
 
@@ -83,7 +107,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           {(['PATIENT', 'PHYSICIAN', 'ATTENDANT'] as UserRole[]).map((r) => (
             <button
               key={r}
-              onClick={() => setRole(r)}
+              onClick={() => { setRole(r); setIsLogin(true); }}
               className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${role === r ? 'bg-white text-deepAqua shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
             >
               {r === 'PATIENT' ? 'Paciente' : r === 'PHYSICIAN' ? 'Médico' : 'Atendente'}
@@ -100,11 +124,55 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
                 type="text" 
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Ex: Maria Solimões"
+                placeholder="Ex: Dra. Carolina Lima"
                 className="w-full bg-white/50 border border-slate-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-aqua/20 transition-all outline-none"
               />
             </div>
           )}
+
+          {role === 'PHYSICIAN' && !isLogin && (
+            <>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Especialidade Principal</label>
+                <select 
+                  required
+                  value={formData.specialty}
+                  onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+                  className="w-full bg-white/50 border border-slate-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-aqua/20 outline-none"
+                >
+                  <option value="">Selecione...</option>
+                  {MOCK_DATA.SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Endereço da Clínica (Manaus)</label>
+                <input 
+                  required
+                  type="text" 
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  placeholder="Rua, Número, Bairro"
+                  className="w-full bg-white/50 border border-slate-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-aqua/20 transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Planos Atendidos</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {MOCK_DATA.PLANS.map(plan => (
+                    <button
+                      key={plan}
+                      type="button"
+                      onClick={() => handlePlanToggle(plan)}
+                      className={`py-2 px-3 rounded-xl text-[10px] font-bold border transition-all ${formData.plans.includes(plan) ? 'bg-deepAqua/10 border-deepAqua text-deepAqua' : 'bg-white/30 border-slate-100 text-slate-400'}`}
+                    >
+                      {plan}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
             <input 
@@ -136,24 +204,32 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             disabled={isLoading}
             className="w-full neo-gradient py-4 rounded-2xl font-bold text-white shadow-xl shadow-babyBlue/30 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
           >
-            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar no Hub' : 'Criar Conta')}
+            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar no Hub' : 'Finalizar Cadastro')}
+          </button>
+          
+          <button 
+            type="button"
+            onClick={() => setIsLogin(!isLogin)}
+            className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua transition-colors mt-2"
+          >
+            {isLogin ? 'Ainda não tem conta? Cadastre-se' : 'Já tem conta? Faça login'}
           </button>
         </form>
 
         <div className="mt-8 pt-8 border-t border-slate-100">
-          <p className="text-center text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Acesso Rápido (Ambiente de Teste)</p>
+          <p className="text-center text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Acesso Rápido (Ambiente de Piloto)</p>
           <div className="grid grid-cols-2 gap-3">
             <button 
               onClick={() => handleDemoLogin('PHYSICIAN')}
               className="py-3 px-4 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg"
             >
-              Sou Médico (Manaus)
+              Piloto: Sou Médico
             </button>
             <button 
               onClick={() => handleDemoLogin('PATIENT')}
               className="py-3 px-4 rounded-xl border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
             >
-              Sou Paciente (Manaus)
+              Piloto: Sou Paciente
             </button>
           </div>
         </div>

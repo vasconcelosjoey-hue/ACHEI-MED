@@ -24,6 +24,9 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Physician {
@@ -33,6 +36,10 @@ export interface Physician {
   city: string;
   plans: string[];
   avatar: string;
+  address: string;
+  lat: number;
+  lng: number;
+  whatsapp?: string;
 }
 
 export interface Appointment {
@@ -48,17 +55,61 @@ export interface Appointment {
 }
 
 export const MOCK_PHYSICIANS: Physician[] = [
-  { id: 'phy1', name: 'Dr. Arlindo Jr.', specialty: 'Cardiologia', city: 'Manaus', plans: ['Unimed', 'Particular'], avatar: 'https://i.pravatar.cc/150?u=arlindo' },
-  { id: 'phy2', name: 'Dra. Samara Lima', specialty: 'Dermatologia', city: 'Manaus', plans: ['Bradesco', 'Particular'], avatar: 'https://i.pravatar.cc/150?u=samara' },
-  { id: 'phy3', name: 'Dr. Victor Quantum', specialty: 'Neurologia', city: 'São Paulo', plans: ['Amil'], avatar: 'https://i.pravatar.cc/150?u=victor' },
-  { id: 'phy4', name: 'Dra. Acreana Silva', specialty: 'Medicina da Família', city: 'Rio Branco', plans: ['Unimed', 'Sus'], avatar: 'https://i.pravatar.cc/150?u=acreana' }
+  { 
+    id: 'phy1', 
+    name: 'Dr. Arlindo Jr.', 
+    specialty: 'Cardiologia', 
+    city: 'Manaus', 
+    plans: ['Unimed', 'Particular'], 
+    avatar: 'https://i.pravatar.cc/150?u=arlindo',
+    address: 'Av. Djalma Batista, 1661 - Chapada',
+    lat: -3.1019,
+    lng: -60.0250,
+    whatsapp: '559293022840'
+  },
+  { 
+    id: 'phy2', 
+    name: 'Dra. Samara Lima', 
+    specialty: 'Dermatologia', 
+    city: 'Manaus', 
+    plans: ['Bradesco', 'Particular'], 
+    avatar: 'https://i.pravatar.cc/150?u=samara',
+    address: 'R. Teresina, 123 - Adrianópolis',
+    lat: -3.1133,
+    lng: -60.0125,
+    whatsapp: '559293022840'
+  },
+  { 
+    id: 'phy3', 
+    name: 'Dr. Victor Quantum', 
+    specialty: 'Neurologia', 
+    city: 'Manaus', 
+    plans: ['Amil', 'Particular'], 
+    avatar: 'https://i.pravatar.cc/150?u=victor',
+    address: 'Av. Mario Ypiranga, 315 - Adrianópolis',
+    lat: -3.1050,
+    lng: -60.0100,
+    whatsapp: '559293022840'
+  },
+  { 
+    id: 'phy4', 
+    name: 'Dra. Carolina Lima', 
+    specialty: 'Pediatria', 
+    city: 'Manaus', 
+    plans: ['Unimed', 'Sus'], 
+    avatar: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=150',
+    address: 'Av. Constantino Nery, 2480 - Flores',
+    lat: -3.0900,
+    lng: -60.0200,
+    whatsapp: '559293022840'
+  }
 ];
 
 export const MOCK_PHYSICIANS_MANAUS: Physician[] = MOCK_PHYSICIANS;
 
 export const MOCK_APPOINTMENTS: Appointment[] = [
-  { id: '1', physicianId: 'phy1', patientName: 'Ana Silva', email: 'ana@email.com', whatsapp: '(11) 99999-9999', time: '09:00', status: 'confirmed' },
-  { id: '2', physicianId: 'phy2', patientName: 'Bruno Costa', email: 'bruno@email.com', whatsapp: '(11) 98888-8888', time: '10:30', status: 'pending' }
+  { id: '1', physicianId: 'phy1', patientName: 'Ana Silva', email: 'ana@email.com', whatsapp: '(92) 99999-9999', time: '09:00', status: 'confirmed' },
+  { id: '2', physicianId: 'phy2', patientName: 'Bruno Costa', email: 'bruno@email.com', whatsapp: '(92) 98888-8888', time: '10:30', status: 'pending' }
 ];
 
 export const MOCK_DATA = {

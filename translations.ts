@@ -19,9 +19,19 @@ export const translations: Record<Language, any> = {
       subtitle: "Gestão inteligente com realocação ativa",
       email: "E-mail cadastrado",
       password: "Senha de acesso",
-      button: "Autenticar com Token",
+      button: "Entrar no Hub",
       forgot: "Recuperar senha",
-      demo: "Modo Demonstração"
+      demo: "Modo Demonstração",
+      address: "Endereço da Clínica",
+      plans: "Planos que Atende",
+      onlyPrivate: "Atende apenas particular?"
+    },
+    map: {
+      searchPlaceholder: "Buscar por especialidade ou médico",
+      viewList: "Ver em Lista",
+      viewMap: "Ver no Mapa",
+      bookWhatsapp: "Agendar via WhatsApp",
+      nearbyDoctors: "Médicos próximos a você"
     },
     integrations: {
       title: "Integrações Inteligentes",
