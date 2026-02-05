@@ -7,7 +7,8 @@ import {
 } from "firebase/firestore";
 import { 
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-  sendEmailVerification, onAuthStateChanged, signOut, User as FirebaseUser 
+  sendEmailVerification, onAuthStateChanged, signOut, User as FirebaseUser,
+  GoogleAuthProvider
 } from "firebase/auth";
 import { Appointment, User, Physician } from "./types";
 
@@ -23,6 +24,7 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // Persistência de Usuário (Profile no Firestore)
 export const saveUserProfile = async (uid: string, data: Partial<User>) => {
@@ -48,7 +50,6 @@ export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'created
   }
 };
 
-// Fix: added missing saveLead export to store contact form leads
 export const saveLead = async (leadData: any) => {
   try {
     const docRef = await addDoc(collection(db, "leads"), {
@@ -62,7 +63,6 @@ export const saveLead = async (leadData: any) => {
   }
 };
 
-// Fix: added missing getMyAppointments export to fetch appointments for a specific user
 export const getMyAppointments = async (userId: string, role: string) => {
   const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
   const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"));
@@ -70,7 +70,6 @@ export const getMyAppointments = async (userId: string, role: string) => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
 };
 
-// Buscar Agendamentos em Tempo Real
 export const subscribeToAppointments = (userId: string, role: string, callback: (apps: Appointment[]) => void) => {
   const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
   const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"));
@@ -80,7 +79,6 @@ export const subscribeToAppointments = (userId: string, role: string, callback: 
   });
 };
 
-// Integração Google Calendar (Mock Persistente)
 export const updateGoogleSync = async (uid: string, status: boolean) => {
   await updateDoc(doc(db, "users", uid), { googleCalendarConnected: status });
 };

@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User, MOCK_DATA } from '../types';
-import { auth, saveUserProfile } from '../firebase';
+import { auth, saveUserProfile, googleProvider, getUserProfile } from '../firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   sendEmailVerification,
   signOut,
-  onAuthStateChanged
+  signInWithPopup
 } from 'firebase/auth';
 
 interface AuthViewProps {
@@ -30,10 +30,41 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
   const isPatient = role === 'PATIENT';
 
-  // Limpa erros ao trocar entre login e cadastro
   useEffect(() => {
     setError('');
   }, [isLogin, role]);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      
+      // Verifica se o perfil já existe no Firestore
+      let profile = await getUserProfile(fbUser.uid);
+      
+      if (!profile) {
+        // Se for novo, cria um perfil básico de Paciente (ou Médico se for o caso)
+        profile = {
+          id: fbUser.uid,
+          name: fbUser.displayName || 'Usuário Google',
+          email: fbUser.email || '',
+          role: role, // Usa a role selecionada no switch da tela
+          avatar: fbUser.photoURL || undefined,
+          verified: true
+        };
+        await saveUserProfile(fbUser.uid, profile);
+      }
+      
+      // O App.tsx via onAuthStateChanged cuidará do redirecionamento
+    } catch (err: any) {
+      console.error("Google Auth Error:", err);
+      setError('Falha ao autenticar com Google. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleResendEmail = async () => {
     if (auth.currentUser) {
@@ -58,17 +89,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         const cred = await signInWithEmailAndPassword(auth, formData.email, formData.password);
         
         if (!cred.user.emailVerified) {
-          setError('Sua conta ainda não foi verificada. Verifique seu e-mail (incluindo spam).');
-          // Deslogamos para evitar sessões fantasmas de usuários não verificados
+          setError('Sua conta ainda não foi verificada. Verifique seu e-mail.');
           await signOut(auth);
           setIsLoading(false);
           return;
         }
-        // Se verificado, o App.tsx detectará via onAuthStateChanged e mudará a view
       } else {
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        
-        // Envia verificação imediatamente
         await sendEmailVerification(cred.user);
         
         const profile: Partial<User> = {
@@ -84,34 +111,14 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         
         await saveUserProfile(cred.user.uid, profile);
         setVerificationSent(true);
-        // Deslogamos após cadastro para forçar o login após verificação
         await signOut(auth);
       }
     } catch (err: any) {
-      console.error("Auth Error:", err.code, err.message);
-      
-      // Tradução de erros comuns do Firebase
       switch (err.code) {
-        case 'auth/invalid-credential':
-          setError('E-mail ou senha incorretos.');
-          break;
-        case 'auth/email-already-in-use':
-          setError('Este e-mail já está cadastrado no sistema.');
-          break;
-        case 'auth/weak-password':
-          setError('A senha deve ter pelo menos 6 caracteres.');
-          break;
-        case 'auth/user-not-found':
-          setError('Usuário não encontrado.');
-          break;
-        case 'auth/configuration-not-found':
-          setError('Erro de configuração: O provedor de e-mail não foi ativado no console do Firebase.');
-          break;
-        case 'auth/too-many-requests':
-          setError('Muitas tentativas. Tente novamente em alguns minutos.');
-          break;
-        default:
-          setError('Ocorreu um erro inesperado. Tente novamente.');
+        case 'auth/invalid-credential': setError('E-mail ou senha incorretos.'); break;
+        case 'auth/email-already-in-use': setError('Este e-mail já está cadastrado.'); break;
+        case 'auth/weak-password': setError('A senha deve ter pelo menos 6 caracteres.'); break;
+        default: setError('Ocorreu um erro inesperado. Tente novamente.');
       }
     } finally {
       setIsLoading(false);
@@ -121,31 +128,15 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   if (verificationSent) {
     return (
       <div className="h-screen flex items-center justify-center p-6 bg-slate-50">
-        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl animate-in zoom-in-95 duration-500 border border-slate-100">
+        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
            <div className="w-24 h-24 bg-aqua/20 text-deepAqua rounded-full flex items-center justify-center text-4xl mx-auto mb-8 animate-bounce">✉️</div>
-           <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">Quase lá!</h2>
+           <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">Verifique seu E-mail</h2>
            <p className="text-slate-500 mb-8 leading-relaxed">
-             Enviamos um link de ativação para <strong>{formData.email}</strong>.<br/> 
-             <span className="text-xs font-bold text-slate-400 uppercase block mt-4">Importante: cheque sua caixa de spam.</span>
+             Link enviado para <strong>{formData.email}</strong>.
            </p>
-           
-           <div className="space-y-4">
-             <button 
-               onClick={() => { setVerificationSent(false); setIsLogin(true); }} 
-               className="w-full py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl transform active:scale-95 transition-all"
-             >
-               Ir para o Login
-             </button>
-             
-             <div className="pt-4">
-                <button 
-                  onClick={handleResendEmail} 
-                  disabled={!!resendStatus}
-                  className="text-xs font-black uppercase tracking-widest text-deepAqua hover:underline"
-                >
-                  {resendStatus || 'Não recebeu o e-mail? Reenviar'}
-                </button>
-             </div>
+           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl">Ir para Login</button>
+           <div className="mt-6">
+              <button onClick={handleResendEmail} disabled={!!resendStatus} className="text-[10px] font-black uppercase text-deepAqua underline tracking-widest">{resendStatus || 'Reenviar E-mail'}</button>
            </div>
         </div>
       </div>
@@ -165,13 +156,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
         <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto pr-2 scrollbar-hide">
           <div className="text-center">
-            <h1 className="text-4xl font-display font-bold tracking-tight text-slate-900">{isLogin ? 'Portal Agenda Med' : 'Criar Hub Saúde'}</h1>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">{isLogin ? 'Acesse seu painel' : 'Junte-se ao ecossistema'}</p>
+            <h1 className="text-4xl font-display font-bold tracking-tight text-slate-900">{isLogin ? 'Agenda Med Cloud' : 'Criar Hub Saúde'}</h1>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">{isLogin ? 'Entrar no sistema' : 'Junte-se a nós'}</p>
           </div>
 
           {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 animate-in shake duration-300">
-              <span className="mr-2">⚠️</span> {error}
+              ⚠️ {error}
             </div>
           )}
 
@@ -179,70 +170,55 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             {!isLogin && (
               <div className="md:col-span-2 space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
-                <input 
-                  required 
-                  type="text" 
-                  placeholder="Nome Completo"
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})} 
-                  className="w-full bg-slate-50 border rounded-xl p-4 text-sm outline-none border-slate-100 focus:border-aqua transition-all" 
-                />
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border rounded-xl p-4 text-sm outline-none border-slate-100 focus:border-aqua" />
               </div>
             )}
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
-              <input 
-                required 
-                type="email" 
-                placeholder="seu@email.com"
-                value={formData.email} 
-                onChange={e => setFormData({...formData, email: e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua transition-all" 
-              />
+              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua" />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
-              <input 
-                required 
-                type="password" 
-                placeholder="••••••••"
-                value={formData.password} 
-                onChange={e => setFormData({...formData, password: e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua transition-all" 
-              />
+              <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua" />
             </div>
 
             {!isLogin && !isPatient && (
               <>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">CRM</label>
-                  <input required type="text" placeholder="00000-AM" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm outline-none" />
+                  <input required type="text" placeholder="00000-AM" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">WhatsApp</label>
-                  <input required type="tel" placeholder="(00) 00000-0000" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm outline-none" />
-                </div>
-                <div className="md:col-span-2 space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Especialidade</label>
-                  <select required value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm outline-none">
-                    <option value="">Selecione...</option>
-                    {MOCK_DATA.SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <input required type="tel" placeholder="(00) 00000-0000" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm" />
                 </div>
               </>
             )}
           </div>
 
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl flex items-center justify-center transition-all transform active:scale-95 ${isPatient ? 'neo-gradient' : 'bg-slate-900'}`}
-          >
-            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Acessar Painel' : 'Criar Minha Conta')}
-          </button>
+          <div className="space-y-4">
+            <button type="submit" disabled={isLoading} className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl flex items-center justify-center transition-all ${isPatient ? 'neo-gradient' : 'bg-slate-900'}`}>
+              {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar agora' : 'Criar Conta')}
+            </button>
+
+            <div className="relative py-4">
+               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+               <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest"><span className="bg-white px-4 text-slate-300">ou continue com</span></div>
+            </div>
+
+            <button 
+              type="button" 
+              onClick={handleGoogleLogin} 
+              disabled={isLoading}
+              className="w-full py-4 border border-slate-200 rounded-2xl flex items-center justify-center gap-4 hover:bg-slate-50 transition-all active:scale-[0.98]"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+              <span className="text-sm font-bold text-slate-700">Entrar com Google</span>
+            </button>
+          </div>
           
           <button type="button" onClick={() => setIsLogin(!isLogin)} className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua transition-colors">
-            {isLogin ? 'Não tem conta? Cadastre-se Agora' : 'Já tem conta? Voltar ao Login'}
+            {isLogin ? 'Ainda não tem conta? Clique aqui' : 'Já possui conta? Fazer Login'}
           </button>
         </form>
       </div>
