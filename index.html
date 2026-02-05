@@ -1,9 +1,9 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full overflow-hidden">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>AGENDA MED | Gestão de Saúde Futurista</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,6 +35,12 @@
         background-color: #FFFFFF;
         color: #0F172A;
         overflow-x: hidden;
+        height: 100%;
+      }
+      #root {
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .glass-card {
         background: rgba(255, 255, 255, 0.8);
@@ -56,14 +62,8 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      .animate-float {
-        animation: float 6s ease-in-out infinite;
-      }
-      @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {
@@ -80,8 +80,8 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
+  <body class="bg-white antialiased">
+    <div id="root" class="scrollbar-hide"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

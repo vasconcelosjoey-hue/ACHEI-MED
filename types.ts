@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'PATIENT' | 'PHYSICIAN' | 'ATTENDANT' | 'INSTITUTION';
 export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
 export type Language = 'pt-BR' | 'en';
@@ -27,6 +28,7 @@ export interface User {
   address?: string;
   lat?: number;
   lng?: number;
+  verified?: boolean; // Novo campo para validação
 }
 
 export interface Physician {
@@ -78,38 +80,40 @@ export const MOCK_PHYSICIANS: Physician[] = [
     lat: -3.1133,
     lng: -60.0125,
     whatsapp: '559293022840'
-  },
-  { 
-    id: 'phy3', 
-    name: 'Dr. Victor Quantum', 
-    specialty: 'Neurologia', 
-    city: 'Manaus', 
-    plans: ['Amil', 'Particular'], 
-    avatar: 'https://i.pravatar.cc/150?u=victor',
-    address: 'Av. Mario Ypiranga, 315 - Adrianópolis',
-    lat: -3.1050,
-    lng: -60.0100,
-    whatsapp: '559293022840'
-  },
-  { 
-    id: 'phy4', 
-    name: 'Dra. Carolina Lima', 
-    specialty: 'Pediatria', 
-    city: 'Manaus', 
-    plans: ['Unimed', 'Sus'], 
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=150',
-    address: 'Av. Constantino Nery, 2480 - Flores',
-    lat: -3.0900,
-    lng: -60.0200,
-    whatsapp: '559293022840'
   }
 ];
 
 export const MOCK_PHYSICIANS_MANAUS: Physician[] = MOCK_PHYSICIANS;
 
+// Added MOCK_APPOINTMENTS to fix the export error in DashboardView.tsx
 export const MOCK_APPOINTMENTS: Appointment[] = [
-  { id: '1', physicianId: 'phy1', patientName: 'Ana Silva', email: 'ana@email.com', whatsapp: '(92) 99999-9999', time: '09:00', status: 'confirmed' },
-  { id: '2', physicianId: 'phy2', patientName: 'Bruno Costa', email: 'bruno@email.com', whatsapp: '(92) 98888-8888', time: '10:30', status: 'pending' }
+  {
+    id: 'app1',
+    physicianId: 'phy1',
+    patientName: 'Ana Silva',
+    email: 'ana@email.com',
+    whatsapp: '5592991234567',
+    time: '09:00',
+    status: 'pending'
+  },
+  {
+    id: 'app2',
+    physicianId: 'phy1',
+    patientName: 'Bruno Costa',
+    email: 'bruno@email.com',
+    whatsapp: '5592988886666',
+    time: '10:30',
+    status: 'confirmed'
+  },
+  {
+    id: 'app3',
+    physicianId: 'phy2',
+    patientName: 'Carlos Duarte',
+    email: 'carlos@email.com',
+    whatsapp: '5592988112233',
+    time: '14:00',
+    status: 'pending'
+  }
 ];
 
 export const MOCK_DATA = {
