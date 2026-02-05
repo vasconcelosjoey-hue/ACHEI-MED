@@ -1,5 +1,5 @@
 
-export type UserRole = 'PATIENT' | 'PHYSICIAN' | 'ATTENDANT';
+export type UserRole = 'PATIENT' | 'PHYSICIAN';
 export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
 export type Language = 'pt-BR' | 'en';
 
@@ -10,7 +10,6 @@ export interface User {
   role: UserRole;
   avatar?: string;
   verified?: boolean;
-  // Campos específicos de Médico
   crm?: string;
   specialty?: string;
   whatsapp?: string;
@@ -24,7 +23,6 @@ export interface User {
   plans?: string[];
 }
 
-// Fix: Added missing fields and supported status variants (upper/lower case used in components)
 export interface Appointment {
   id: string;
   physicianId: string;
@@ -37,7 +35,6 @@ export interface Appointment {
   email?: string;
 }
 
-// Fix: Added missing Notification interface
 export interface Notification {
   id: string;
   userId: string;
@@ -48,7 +45,6 @@ export interface Notification {
   createdAt: number;
 }
 
-// Fix: Added missing Physician interface
 export interface Physician {
   id: string;
   name: string;
@@ -67,7 +63,6 @@ export const MOCK_DATA = {
   CITIES: ['Manaus', 'Rio Branco', 'São Paulo', 'Curitiba']
 };
 
-// Fix: Added missing CONSTANTS
 export const CONSTANTS = {
   HERO_IMAGE: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070',
   P1_IMAGE: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=2070',
@@ -81,7 +76,6 @@ export const CONSTANTS = {
   TERMS_URL: '#'
 };
 
-// Fix: Added missing MOCK_PHYSICIANS
 export const MOCK_PHYSICIANS: Physician[] = [
   { 
     id: 'phy1', 
@@ -107,10 +101,8 @@ export const MOCK_PHYSICIANS: Physician[] = [
   }
 ];
 
-// Fix: Added missing MOCK_PHYSICIANS_MANAUS
 export const MOCK_PHYSICIANS_MANAUS = MOCK_PHYSICIANS;
 
-// Fix: Added missing MOCK_APPOINTMENTS
 export const MOCK_APPOINTMENTS: Appointment[] = [
   { 
     id: 'app1', 
