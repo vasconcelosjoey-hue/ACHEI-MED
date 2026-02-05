@@ -1,8 +1,8 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp, Firestore } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, Firestore, orderBy, limit } from "firebase/firestore";
+import { Appointment } from "./types";
 
-// CONFIGURAÇÃO DE DEMONSTRAÇÃO
 const firebaseConfig = {
   apiKey: "DEMO_MODE_KEY",
   authDomain: "agenda-med.firebaseapp.com",
@@ -12,34 +12,71 @@ const firebaseConfig = {
   appId: "1:000000000:web:demo"
 };
 
-// Inicialização segura
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
 let firestoreInstance: Firestore | null = null;
 try {
-  // Tentativa de obter a instância, mas sem quebrar o app se falhar
   firestoreInstance = getFirestore(app);
 } catch (error) {
-  console.warn("Firestore service not available. App running in offline/demo mode.");
+  console.warn("Firestore not available.");
 }
 
 export const db = firestoreInstance;
 
+export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'createdAt'>) => {
+  if (!db) {
+    // Fallback LocalStorage para Demo sem Firebase
+    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
+    const newApp = { ...appData, id: Math.random().toString(), createdAt: Date.now() };
+    localStorage.setItem('agenda_med_cloud_fallback', JSON.stringify([newApp, ...local]));
+    return newApp;
+  }
+
+  try {
+    const docRef = await addDoc(collection(db, "appointments"), {
+      ...appData,
+      createdAt: serverTimestamp()
+    });
+    return { ...appData, id: docRef.id };
+  } catch (e) {
+    console.error("Error saving appointment:", e);
+    return null;
+  }
+};
+
+export const getMyAppointments = async (userId: string, role: 'PATIENT' | 'PHYSICIAN') => {
+  if (!db) {
+    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
+    return local.filter((a: any) => role === 'PATIENT' ? a.patientId === userId : a.physicianId === userId);
+  }
+
+  try {
+    const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
+    const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"), limit(20));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+  } catch (e) {
+    console.error("Error fetching appointments:", e);
+    return [];
+  }
+};
+
+// Fix: added missing saveLead function
 export const saveLead = async (leadData: any) => {
   if (!db) {
-    console.info("Simulando salvamento de lead (Modo Demo):", leadData);
-    return { id: "demo-lead-" + Date.now() };
+    const local = JSON.parse(localStorage.getItem('agenda_med_leads_fallback') || '[]');
+    const newLead = { ...leadData, id: Math.random().toString(), createdAt: Date.now() };
+    localStorage.setItem('agenda_med_leads_fallback', JSON.stringify([newLead, ...local]));
+    return newLead;
   }
 
   try {
     const docRef = await addDoc(collection(db, "leads"), {
       ...leadData,
-      source: "landing",
       createdAt: serverTimestamp()
     });
-    return docRef;
+    return { ...leadData, id: docRef.id };
   } catch (e) {
-    console.warn("Falha ao salvar no Firestore (usando fallback):", e);
-    return { id: "demo-lead-" + Date.now() };
+    console.error("Error saving lead:", e);
+    throw e;
   }
 };

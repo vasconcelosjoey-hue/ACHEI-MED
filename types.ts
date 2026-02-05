@@ -26,13 +26,15 @@ export interface User {
 export interface Appointment {
   id: string;
   physicianId: string;
+  physicianName: string;
+  patientId: string;
   patientName: string;
   time: string;
   date: string;
   status: 'CONFIRMED' | 'PENDING' | 'CANCELED' | 'BLOCKED' | 'confirmed' | 'pending' | 'canceled';
   plan: string;
   whatsapp: string;
-  email?: string;
+  createdAt: number;
 }
 
 export interface Notification {
@@ -53,77 +55,69 @@ export interface Physician {
   whatsapp: string;
   city: string;
   plans: string[];
-  lat?: number;
-  lng?: number;
+  crm: string;
 }
 
 export const MOCK_DATA = {
-  SPECIALTIES: ['Cardiologia', 'Dermatologia', 'Pediatria', 'Ortopedia', 'Ginecologia', 'Psiquiatria', 'Clínico Geral'],
+  SPECIALTIES: ['Cardiologia', 'Dermatologia', 'Pediatria', 'Ortopedia', 'Ginecologia', 'Psiquiatria', 'Clínico Geral', 'Nutrição', 'Psicologia', 'Fisioterapia', 'Oftalmologia', 'Endocrinologia'],
   PLANS: ['Unimed', 'Bradesco Saúde', 'SulAmérica', 'Amil', 'Particular', 'Cassi', 'Hapvida'],
   CITIES: ['Manaus', 'Rio Branco', 'São Paulo', 'Curitiba']
 };
 
+// Fix: added CONSTANTS required by multiple components
 export const CONSTANTS = {
   HERO_IMAGE: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070',
-  P1_IMAGE: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=2070',
-  P2_IMAGE: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=2070',
-  P3_IMAGE: 'https://images.unsplash.com/photo-1559839734-2b71f1e3c770?auto=format&fit=crop&q=80&w=2070',
-  TEST1_IMAGE: 'https://i.pravatar.cc/150?u=dr1',
-  TEST2_IMAGE: 'https://i.pravatar.cc/150?u=dr2',
+  P1_IMAGE: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000',
+  P2_IMAGE: 'https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=80&w=1000',
+  P3_IMAGE: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=1000',
+  TEST1_IMAGE: 'https://i.pravatar.cc/150?u=test1',
+  TEST2_IMAGE: 'https://i.pravatar.cc/150?u=test2',
   LINK_DEMO: '#',
-  LINK_WHATS: 'https://wa.me/559293022840',
+  LINK_WHATS: 'https://wa.me/5592988880000',
   PRIV_URL: '#',
   TERMS_URL: '#'
 };
 
-export const MOCK_PHYSICIANS: Physician[] = [
-  { 
-    id: 'phy1', 
-    name: 'Dr. Arlindo Jr.', 
-    specialty: 'Cardiologia', 
-    avatar: 'https://i.pravatar.cc/150?u=phy1', 
-    whatsapp: '559293022840', 
-    city: 'Manaus', 
-    plans: ['Unimed', 'Bradesco'], 
-    lat: -3.105, 
-    lng: -60.015 
-  },
-  { 
-    id: 'phy2', 
-    name: 'Dra. Ana Silva', 
-    specialty: 'Dermatologia', 
-    avatar: 'https://i.pravatar.cc/150?u=phy2', 
-    whatsapp: '559293022841', 
-    city: 'Manaus', 
-    plans: ['SulAmérica', 'Particular'], 
-    lat: -3.115, 
-    lng: -60.025 
+// Geração de 50 Médicos Mock
+const generateDoctors = (): Physician[] => {
+  const firstNames = ['Lucas', 'Mariana', 'Ricardo', 'Beatriz', 'Felipe', 'Juliana', 'Gabriel', 'Fernanda', 'Tiago', 'Camila'];
+  const lastNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Lima', 'Carvalho', 'Ferreira', 'Ribeiro', 'Almeida'];
+  const doctors: Physician[] = [];
+
+  for (let i = 1; i <= 50; i++) {
+    const fn = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const ln = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const spec = MOCK_DATA.SPECIALTIES[Math.floor(Math.random() * MOCK_DATA.SPECIALTIES.length)];
+    
+    doctors.push({
+      id: `phy-${i}`,
+      name: `Dr(a). ${fn} ${ln}`,
+      specialty: spec,
+      avatar: `https://i.pravatar.cc/150?u=phy${i}`,
+      whatsapp: '5592988880000',
+      city: 'Manaus',
+      plans: ['Particular', MOCK_DATA.PLANS[Math.floor(Math.random() * MOCK_DATA.PLANS.length)]],
+      crm: `${10000 + i}-AM`
+    });
   }
-];
+  return doctors;
+};
 
-export const MOCK_PHYSICIANS_MANAUS = MOCK_PHYSICIANS;
+export const MOCK_PHYSICIANS: Physician[] = generateDoctors();
 
+// Fix: added MOCK_APPOINTMENTS required by DashboardView
 export const MOCK_APPOINTMENTS: Appointment[] = [
-  { 
-    id: 'app1', 
-    physicianId: 'phy1', 
-    patientName: 'Carlos Souza', 
-    time: '08:00', 
-    date: '2024-05-20', 
-    status: 'confirmed', 
-    plan: 'Unimed', 
-    whatsapp: '5592988887777', 
-    email: 'carlos@email.com' 
-  },
-  { 
-    id: 'app2', 
-    physicianId: 'phy1', 
-    patientName: 'Maria Lima', 
-    time: '10:30', 
-    date: '2024-05-20', 
-    status: 'pending', 
-    plan: 'Particular', 
-    whatsapp: '5592988886666', 
-    email: 'maria@email.com' 
+  {
+    id: 'app-1',
+    physicianId: 'phy-1',
+    physicianName: 'Dr. Lucas Silva',
+    patientId: 'pat-1',
+    patientName: 'Maria Oliveira',
+    time: '09:00',
+    date: '2024-05-20',
+    status: 'confirmed',
+    plan: 'Unimed',
+    whatsapp: '5592988887777',
+    createdAt: Date.now()
   }
 ];
