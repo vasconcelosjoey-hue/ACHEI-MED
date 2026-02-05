@@ -51,27 +51,7 @@ const ContactSection: React.FC<{ t: any; lang: Language }> = ({ t, lang }) => {
 
       <div className="grid lg:grid-cols-2 gap-16">
         {/* Left Column: Direct CTAs */}
-        <div>
-          <div className="mb-12">
-            <h3 className="text-2xl font-bold text-blue-200 mb-8 uppercase tracking-widest">{t.colA}</h3>
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border border-white/20 flex flex-col items-center sm:flex-row gap-8">
-              <div className="bg-white p-2 rounded-xl">
-                <img src={CONSTANTS.QR_CODE_URL} alt="QR Code App" className="w-32 h-32" />
-              </div>
-              <div className="text-center sm:text-left flex-1">
-                <p className="text-xl font-bold mb-4">Acesse via App Store ou Google Play</p>
-                <a 
-                  href={CONSTANTS.LINK_APP}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-white text-primary px-8 py-3 rounded-full font-bold shadow-lg transition-transform hover:scale-105"
-                >
-                  Baixar Agora
-                </a>
-              </div>
-            </div>
-          </div>
-
+        <div className="flex flex-col justify-center">
           <div>
             <h3 className="text-2xl font-bold text-blue-200 mb-8 uppercase tracking-widest">{t.colB}</h3>
             <div className="space-y-4">
