@@ -6,41 +6,36 @@ import DashboardContainer from './components/DashboardContainer';
 import Header from './components/Header';
 import NotificationPanel from './components/NotificationPanel';
 import LandingView from './components/LandingView';
+import { auth, getUserProfile } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<AppView>('LANDING');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('agenda_med_user');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setUser(parsed);
-      // Mantemos LANDING como padrão mesmo se houver usuário, 
-      // para o usuário ver o site. O Header terá o botão de Dashboard.
-    }
-  }, []);
-
-  const handleLogin = (loggedUser: User) => {
-    setUser(loggedUser);
-    localStorage.setItem('agenda_med_user', JSON.stringify(loggedUser));
-    setView('DASHBOARD');
-    addNotification({
-      id: Math.random().toString(),
-      userId: loggedUser.id,
-      title: 'Bem-vindo de volta!',
-      message: `Olá ${loggedUser.name}, sua central de saúde está pronta.`,
-      type: 'SUCCESS',
-      read: false,
-      createdAt: Date.now()
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser && fbUser.emailVerified) {
+        const profile = await getUserProfile(fbUser.uid);
+        if (profile) {
+          setUser(profile);
+          // Se for a primeira vez carregando e não estiver no site, vai pro dashboard
+          if (view === 'AUTH') setView('DASHBOARD');
+        }
+      } else {
+        setUser(null);
+      }
+      setIsInitializing(false);
     });
-  };
+    return () => unsub();
+  }, [view]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await auth.signOut();
     setUser(null);
-    localStorage.removeItem('agenda_med_user');
     setView('LANDING');
   };
 
@@ -51,6 +46,14 @@ const App: React.FC = () => {
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
+
+  if (isInitializing) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="loader !w-12 !h-12 !border-4"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white selection:bg-aqua selection:text-deepAqua">
@@ -67,7 +70,7 @@ const App: React.FC = () => {
         {view === 'LANDING' ? (
           <LandingView onStartClick={() => setView('AUTH')} />
         ) : view === 'AUTH' ? (
-          <AuthView onAuthSuccess={handleLogin} onBack={() => setView('LANDING')} />
+          <AuthView onAuthSuccess={() => setView('DASHBOARD')} onBack={() => setView('LANDING')} />
         ) : (
           <DashboardContainer 
             user={user!} 

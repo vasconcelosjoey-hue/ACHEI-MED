@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full overflow-hidden">
+<html lang="pt-BR" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -24,6 +24,9 @@
               deepAqua: '#0D9488',
               surface: '#FFFFFF',
               glass: 'rgba(255, 255, 255, 0.7)',
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }
           }
         }
@@ -35,12 +38,9 @@
         background-color: #FFFFFF;
         color: #0F172A;
         overflow-x: hidden;
-        height: 100%;
       }
       #root {
         height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
       }
       .glass-card {
         background: rgba(255, 255, 255, 0.8);
@@ -63,7 +63,16 @@
         100% { transform: rotate(360deg); }
       }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .reveal-mask {
+        clip-path: inset(0 100% 0 0);
+        transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+      }
+      .reveal-mask.active {
+        clip-path: inset(0 0 0 0);
+      }
+      .parallax-bg {
+        will-change: transform;
+      }
     </style>
   <script type="importmap">
 {
@@ -73,15 +82,19 @@
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "firebase/app": "https://esm.sh/firebase@11.0.1/app",
     "firebase/firestore": "https://esm.sh/firebase@11.0.1/firestore",
+    "firebase/auth": "https://esm.sh/firebase@11.0.1/auth",
+    "gsap": "https://esm.sh/gsap@3.12.5",
+    "gsap/ScrollTrigger": "https://esm.sh/gsap@3.12.5/ScrollTrigger",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/"
+    "gsap/": "https://esm.sh/gsap@^3.14.2/",
+    "firebase/": "https://esm.sh/firebase@^12.9.0/",
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
 </head>
   <body class="bg-white antialiased">
-    <div id="root" class="scrollbar-hide"></div>
+    <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

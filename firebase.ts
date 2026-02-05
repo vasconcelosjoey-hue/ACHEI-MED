@@ -1,9 +1,16 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, Firestore, orderBy, limit } from "firebase/firestore";
-import { Appointment } from "./types";
+import { 
+  getFirestore, collection, addDoc, getDocs, query, where, 
+  serverTimestamp, doc, updateDoc, getDoc, setDoc, 
+  orderBy, limit, onSnapshot 
+} from "firebase/firestore";
+import { 
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+  sendEmailVerification, onAuthStateChanged, signOut, User as FirebaseUser 
+} from "firebase/auth";
+import { Appointment, User, Physician } from "./types";
 
-// Credenciais reais fornecidas pelo usuário
 const firebaseConfig = {
   apiKey: "AIzaSyCf3dtWjvyKzswkr6VDM7gqpw-yI6QlHX8",
   authDomain: "agenda-med-br.firebaseapp.com",
@@ -14,29 +21,21 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-let firestoreInstance: Firestore | null = null;
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 
-try {
-  firestoreInstance = getFirestore(app);
-} catch (error) {
-  console.error("Erro ao inicializar Firestore:", error);
-}
+// Persistência de Usuário (Profile no Firestore)
+export const saveUserProfile = async (uid: string, data: Partial<User>) => {
+  await setDoc(doc(db, "users", uid), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+};
 
-export const db = firestoreInstance;
+export const getUserProfile = async (uid: string) => {
+  const d = await getDoc(doc(db, "users", uid));
+  return d.exists() ? d.data() as User : null;
+};
 
-/**
- * Salva um agendamento no Firestore.
- * Importante: Certifique-se de que as Regras do Firestore no console permitam escrita.
- */
+// Salvar Agendamento
 export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'createdAt'>) => {
-  if (!db) {
-    console.warn("Firestore não disponível, usando LocalStorage como fallback.");
-    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
-    const newApp = { ...appData, id: Math.random().toString(36).substr(2, 9), createdAt: Date.now() };
-    localStorage.setItem('agenda_med_cloud_fallback', JSON.stringify([newApp, ...local]));
-    return newApp;
-  }
-
   try {
     const docRef = await addDoc(collection(db, "appointments"), {
       ...appData,
@@ -44,63 +43,44 @@ export const saveAppointment = async (appData: Omit<Appointment, 'id' | 'created
     });
     return { ...appData, id: docRef.id };
   } catch (e) {
-    console.error("Erro ao salvar agendamento no Firebase:", e);
-    // Fallback silencioso para garantir que o usuário não perca a ação se a regra estiver 'false'
-    const local = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
-    const newApp = { ...appData, id: 'local-' + Math.random().toString(36).substr(2, 5), createdAt: Date.now() };
-    localStorage.setItem('agenda_med_cloud_fallback', JSON.stringify([newApp, ...local]));
-    return newApp;
+    console.error("Erro ao agendar:", e);
+    return null;
   }
 };
 
-/**
- * Busca agendamentos do usuário logado.
- */
-export const getMyAppointments = async (userId: string, role: 'PATIENT' | 'PHYSICIAN') => {
-  const localApps = JSON.parse(localStorage.getItem('agenda_med_cloud_fallback') || '[]');
-  const filteredLocal = localApps.filter((a: any) => role === 'PATIENT' ? a.patientId === userId : a.physicianId === userId);
-
-  if (!db) return filteredLocal;
-
-  try {
-    const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
-    const q = query(
-      collection(db, "appointments"), 
-      where(field, "==", userId), 
-      orderBy("createdAt", "desc"), 
-      limit(50)
-    );
-    const snapshot = await getDocs(q);
-    const firestoreApps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
-    
-    // Mescla local com nuvem para garantir que agendamentos recentes (antes da propagação) apareçam
-    const all = [...firestoreApps, ...filteredLocal.filter((l: any) => !firestoreApps.find(f => f.id === l.id))];
-    return all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  } catch (e) {
-    console.error("Erro ao buscar no Firebase:", e);
-    return filteredLocal;
-  }
-};
-
-/**
- * Salva um lead/contato no Firestore.
- */
+// Fix: added missing saveLead export to store contact form leads
 export const saveLead = async (leadData: any) => {
-  if (!db) {
-    const local = JSON.parse(localStorage.getItem('agenda_med_leads_fallback') || '[]');
-    const newLead = { ...leadData, id: Math.random().toString(), createdAt: Date.now() };
-    localStorage.setItem('agenda_med_leads_fallback', JSON.stringify([newLead, ...local]));
-    return newLead;
-  }
-
   try {
     const docRef = await addDoc(collection(db, "leads"), {
       ...leadData,
       createdAt: serverTimestamp()
     });
-    return { ...leadData, id: docRef.id };
+    return docRef.id;
   } catch (e) {
     console.error("Erro ao salvar lead:", e);
     throw e;
   }
+};
+
+// Fix: added missing getMyAppointments export to fetch appointments for a specific user
+export const getMyAppointments = async (userId: string, role: string) => {
+  const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
+  const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+};
+
+// Buscar Agendamentos em Tempo Real
+export const subscribeToAppointments = (userId: string, role: string, callback: (apps: Appointment[]) => void) => {
+  const field = role === 'PATIENT' ? 'patientId' : 'physicianId';
+  const q = query(collection(db, "appointments"), where(field, "==", userId), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snapshot) => {
+    const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+    callback(apps);
+  });
+};
+
+// Integração Google Calendar (Mock Persistente)
+export const updateGoogleSync = async (uid: string, status: boolean) => {
+  await updateDoc(doc(db, "users", uid), { googleCalendarConnected: status });
 };
