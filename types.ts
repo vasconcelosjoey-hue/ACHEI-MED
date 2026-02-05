@@ -64,9 +64,12 @@ export const MOCK_DATA = {
   CITIES: ['Manaus', 'Rio Branco', 'São Paulo', 'Curitiba']
 };
 
-// Fix: added CONSTANTS required by multiple components
 export const CONSTANTS = {
   HERO_IMAGE: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070',
+  VIDEO_HERO_BG: 'https://assets.mixkit.co/videos/preview/mixkit-blue-abstract-glass-background-loop-41584-large.mp4',
+  VIDEO_TECH_PILLAR: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-blue-lines-loop-33045-large.mp4',
+  VIDEO_DATA_PILLAR: 'https://assets.mixkit.co/videos/preview/mixkit-scanning-digital-data-on-a-screen-41569-large.mp4',
+  VIDEO_BRIDGE: 'https://assets.mixkit.co/videos/preview/mixkit-digital-particles-in-slow-motion-41575-large.mp4',
   P1_IMAGE: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000',
   P2_IMAGE: 'https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=80&w=1000',
   P3_IMAGE: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=1000',
@@ -78,7 +81,6 @@ export const CONSTANTS = {
   TERMS_URL: '#'
 };
 
-// Geração de 50 Médicos Mock
 const generateDoctors = (): Physician[] => {
   const firstNames = ['Lucas', 'Mariana', 'Ricardo', 'Beatriz', 'Felipe', 'Juliana', 'Gabriel', 'Fernanda', 'Tiago', 'Camila'];
   const lastNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Lima', 'Carvalho', 'Ferreira', 'Ribeiro', 'Almeida'];
@@ -105,7 +107,6 @@ const generateDoctors = (): Physician[] => {
 
 export const MOCK_PHYSICIANS: Physician[] = generateDoctors();
 
-// Fix: added MOCK_APPOINTMENTS required by DashboardView
 export const MOCK_APPOINTMENTS: Appointment[] = [
   {
     id: 'app-1',

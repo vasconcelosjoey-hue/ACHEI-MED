@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { translations } from '../translations';
+import { CONSTANTS } from '../types';
 import Hero from './Hero';
 import ProblemSection from './ProblemSection';
 import BenefitsSection from './BenefitsSection';
@@ -35,9 +36,9 @@ const LandingView: React.FC<LandingViewProps> = ({ onStartClick }) => {
       }
     });
 
-    // Parallax on bridge background
-    gsap.to(".bridge-bg", {
-      yPercent: 30,
+    // Parallax on bridge background video
+    gsap.to(".bridge-video", {
+      yPercent: 20,
       ease: "none",
       scrollTrigger: {
         trigger: ".bridge-section",
@@ -62,9 +63,19 @@ const LandingView: React.FC<LandingViewProps> = ({ onStartClick }) => {
         <BenefitsSection t={t.benefits} />
       </section>
 
-      <section className="bridge-section py-40 bg-slate-900 text-white overflow-hidden relative">
-        <div className="bridge-bg absolute inset-0 bg-gradient-to-br from-deepAqua/40 to-slate-900 scale-125"></div>
-        <div className="max-w-7xl mx-auto px-6 text-center relative z-10 bridge-content">
+      <section className="bridge-section py-40 bg-slate-900 text-white overflow-hidden relative min-h-[60vh] flex items-center">
+        {/* Bridge Background Video */}
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline 
+          className="bridge-video absolute inset-0 w-full h-full object-cover opacity-30 scale-125 pointer-events-none"
+        >
+          <source src={CONSTANTS.VIDEO_BRIDGE} type="video/mp4" />
+        </video>
+        
+        <div className="max-w-7xl mx-auto px-6 text-center relative z-10 bridge-content w-full">
           <div className="bridge-text">
             <h2 className="text-5xl md:text-8xl font-display font-bold mb-10 leading-tight tracking-tighter">
               {t.bridge.title}
