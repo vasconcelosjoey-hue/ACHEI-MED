@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword, 
   sendEmailVerification,
   signOut,
+  deleteUser,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult
@@ -51,17 +52,25 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   }, [isLogin, role]);
 
   const handleAuthResult = async (fbUser: any) => {
-    let profile = await getUserProfile(fbUser.uid);
-    if (!profile) {
-      profile = {
-        id: fbUser.uid,
-        name: fbUser.displayName || 'Usuário Google',
-        email: fbUser.email || '',
-        role: role,
-        avatar: fbUser.photoURL || undefined,
-        verified: true
-      };
-      await saveUserProfile(fbUser.uid, profile);
+    try {
+      let profile = await getUserProfile(fbUser.uid);
+      if (!profile) {
+        profile = {
+          id: fbUser.uid,
+          name: fbUser.displayName || 'Usuário Google',
+          email: fbUser.email || '',
+          role: role,
+          avatar: fbUser.photoURL || undefined,
+          verified: true
+        };
+        await saveUserProfile(fbUser.uid, profile);
+      }
+    } catch (err: any) {
+      if (err.message.includes('permission-denied')) {
+        setError('ERRO DE BANCO: As regras do Firestore no seu Firebase Console estão bloqueadas. Vá em Firestore > Rules e libere o acesso.');
+      } else {
+        setError(`Erro ao salvar perfil: ${err.code || err.message}`);
+      }
     }
   };
 
@@ -72,17 +81,12 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       const result = await signInWithPopup(auth, googleProvider);
       await handleAuthResult(result.user);
     } catch (err: any) {
-      console.error("Google Auth Error:", err.code, err.message);
-      
       const currentDomain = window.location.hostname;
-
       if (err.code === 'auth/popup-blocked') {
         setError('O navegador bloqueou o pop-up. Tentando via redirecionamento...');
         await signInWithRedirect(auth, googleProvider);
       } else if (err.code === 'auth/unauthorized-domain') {
-        setError(`DOMÍNIO NÃO AUTORIZADO! No Firebase, adicione o domínio: ${currentDomain}`);
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        setError('Você fechou a janela de login antes de completar.');
+        setError(`DOMÍNIO NÃO AUTORIZADO! Adicione ${currentDomain} no console do Firebase.`);
       } else {
         setError(`Erro: ${err.code}`);
       }
@@ -96,10 +100,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       try {
         setResendStatus('Enviando...');
         await sendEmailVerification(auth.currentUser);
-        setResendStatus('E-mail reenviado com sucesso!');
+        setResendStatus('E-mail reenviado!');
         setTimeout(() => setResendStatus(''), 3000);
       } catch (err: any) {
-        setResendStatus('Erro ao reenviar.');
+        setResendStatus('Erro ao enviar.');
       }
     }
   };
@@ -119,26 +123,47 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           return;
         }
       } else {
+        // 1. Cria a conta no Authentication
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        await sendEmailVerification(cred.user);
         
-        const profile: Partial<User> = {
-          id: cred.user.uid,
-          name: formData.name,
-          email: formData.email,
-          role: role,
-          crm: formData.crm,
-          whatsapp: formData.whatsapp,
-          specialty: formData.specialty,
-          verified: false
-        };
-        
-        await saveUserProfile(cred.user.uid, profile);
-        setVerificationSent(true);
-        await signOut(auth);
+        try {
+          // 2. Envia e-mail de verificação
+          await sendEmailVerification(cred.user);
+          
+          // 3. Tenta salvar no Firestore
+          const profile: Partial<User> = {
+            id: cred.user.uid,
+            name: formData.name,
+            email: formData.email,
+            role: role,
+            crm: formData.crm,
+            whatsapp: formData.whatsapp,
+            specialty: formData.specialty,
+            verified: false
+          };
+          
+          await saveUserProfile(cred.user.uid, profile);
+          setVerificationSent(true);
+          await signOut(auth);
+        } catch (dbErr: any) {
+          // Se falhar o banco de dados, removemos o usuário do Auth para permitir tentar de novo
+          console.error("Firestore error, cleaning up auth user:", dbErr);
+          if (dbErr.message.includes('permission-denied')) {
+             setError('ACESSO NEGADO AO BANCO: Você precisa ativar as REGRAS (Rules) do Firestore no console do Firebase.');
+          } else {
+             setError(`Erro no banco: ${dbErr.code}`);
+          }
+          await deleteUser(cred.user);
+        }
       }
     } catch (err: any) {
-      setError(err.code === 'auth/invalid-credential' ? 'E-mail ou senha incorretos.' : `Erro: ${err.code}`);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Este e-mail já está sendo usado.');
+      } else if (err.code === 'auth/invalid-credential') {
+        setError('E-mail ou senha incorretos.');
+      } else {
+        setError(`Erro: ${err.code}`);
+      }
     } finally {
       setIsLoading(false);
     }
