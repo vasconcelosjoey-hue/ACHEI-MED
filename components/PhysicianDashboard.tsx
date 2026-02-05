@@ -125,7 +125,7 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
     const newSlot = {
         id: Math.random().toString(),
         patient: patient.name,
-        time: '17:30', // Slot de encaixe padrão
+        time: '17:30', 
         type: 'Encaixe Urgente',
         status: 'CONFIRMED',
         plan: 'Urgência'
@@ -145,7 +145,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Agenda Ativa - Dr(a). {user.name}</h1>
@@ -170,7 +169,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: t.app.stats.occupied, val: appointments.length.toString(), icon: '👤', color: 'bg-babyBlue' },
@@ -193,7 +191,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         </div>
 
         <div className="space-y-6">
-          {/* Central de Integração */}
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group">
             <h3 className="text-lg font-display font-bold mb-2 text-slate-900">{t.integrations.title}</h3>
             <p className="text-xs text-slate-500 mb-6">{t.integrations.googleDesc}</p>
@@ -255,7 +252,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
           <h2 className="text-xl font-display font-bold text-slate-900">Gerenciamento de Consultas</h2>
@@ -308,7 +304,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         </div>
       </div>
 
-      {/* Google Auth Modal Simulation */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAuthModal(false)}></div>
@@ -334,7 +329,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         </div>
       )}
 
-      {/* Settings Modal */}
       {activeModal === 'SETTINGS' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setActiveModal(null)}></div>
@@ -365,7 +359,6 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         </div>
       )}
 
-      {/* New Slot Modal */}
       {activeModal === 'NEW_SLOT' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setActiveModal(null)}></div>

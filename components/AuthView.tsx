@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { UserRole, User, MOCK_DATA } from '../types';
+import { translations } from '../translations';
 
 interface AuthViewProps {
   onAuthSuccess: (user: User) => void;
@@ -8,6 +9,7 @@ interface AuthViewProps {
 }
 
 const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
+  const t = translations['pt-BR'].login;
   const [role, setRole] = useState<UserRole>('PATIENT');
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,15 +22,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     specialty: '',
     plans: [] as string[]
   });
-
-  const handlePlanToggle = (plan: string) => {
-    setFormData(prev => ({
-      ...prev,
-      plans: prev.plans.includes(plan) 
-        ? prev.plans.filter(p => p !== plan) 
-        : [...prev.plans, plan]
-    }));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,29 +47,32 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
   if (isVerificationSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
-        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center animate-in zoom-in-95">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center animate-in zoom-in-95 flex-grow-0">
           <div className="w-20 h-20 bg-aqua/20 text-deepAqua rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">✉️</div>
-          <h2 className="text-2xl font-display font-bold text-slate-900 mb-4">Verifique seu E-mail</h2>
+          <h2 className="text-2xl font-display font-bold text-slate-900 mb-4">{t.verificationSent}</h2>
           <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-            Enviamos um link de confirmação para <strong>{formData.email}</strong>. Por favor, verifique sua caixa de entrada e spam para ativar sua conta.
+            {t.verificationDesc}
           </p>
           <button 
             onClick={() => setIsVerificationSent(false)} 
             className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
           >
-            Voltar ao Login
+            {t.backToLogin}
           </button>
         </div>
+        <footer className="mt-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
+           {t.footer}
+        </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-hidden bg-slate-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden bg-slate-50">
       <div className="absolute top-[-10%] left-[-10%] w-1/2 h-1/2 bg-babyBlue/20 rounded-full blur-[120px]"></div>
       
-      <div className="w-full max-w-xl bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700 overflow-y-auto max-h-[90vh] scrollbar-hide">
+      <div className="w-full max-w-xl bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700 overflow-y-auto max-h-[85vh] scrollbar-hide">
         <button 
           onClick={onBack}
           className="absolute top-6 left-6 md:top-8 md:left-8 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-deepAqua transition-colors flex items-center gap-2"
@@ -105,20 +101,20 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.name}</label>
               <input 
                 required
                 type="text" 
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Ex: Dra. Carolina Lima"
+                placeholder="Ex: Carolina Lima"
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-aqua/20 transition-all"
               />
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
+            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.email}</label>
             <input 
               required
               type="email" 
@@ -130,7 +126,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
+            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">{t.password}</label>
             <input 
               required
               type="password" 
@@ -161,7 +157,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             disabled={isLoading}
             className="w-full neo-gradient py-4 rounded-xl font-bold text-white shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center"
           >
-            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar' : 'Criar Conta')}
+            {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? t.login : t.register)}
           </button>
           
           <button 
@@ -169,10 +165,14 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             onClick={() => setIsLogin(!isLogin)}
             className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua transition-colors"
           >
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Login'}
+            {isLogin ? t.noAccount : t.hasAccount}
           </button>
         </form>
       </div>
+      
+      <footer className="mt-8 text-[10px] font-black uppercase tracking-widest text-slate-400 relative z-10">
+        {t.footer}
+      </footer>
     </div>
   );
 };

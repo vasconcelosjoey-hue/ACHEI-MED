@@ -24,7 +24,15 @@ export const translations: Record<Language, any> = {
       demo: "Modo Demonstração",
       address: "Endereço da Clínica",
       plans: "Planos que Atende",
-      onlyPrivate: "Atende apenas particular?"
+      name: "Nome Completo",
+      register: "Criar Conta",
+      login: "Entrar",
+      noAccount: "Não tem conta? Cadastre-se",
+      hasAccount: "Já tem conta? Login",
+      verificationSent: "Verifique seu E-mail",
+      verificationDesc: "Enviamos um link de confirmação para seu e-mail. Por favor, verifique sua caixa de entrada e spam para ativar sua conta.",
+      backToLogin: "Voltar ao Login",
+      footer: "Powered By Agenda Med | Todos os direitos reservados 2026"
     },
     map: {
       searchPlaceholder: "Buscar por especialidade ou médico",
@@ -47,7 +55,7 @@ export const translations: Record<Language, any> = {
       deny: "Cancelar"
     },
     app: {
-      welcome: "Dashboard AGENDA MED",
+      welcome: "Painel AGENDA MED",
       today: "Agenda do Dia",
       register: "Novo Agendamento",
       physician: "Médico",

@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
             </span>
           </div>
 
-          {view === 'LANDING' ? (
+          {view === 'LANDING' && (
             <nav className="hidden lg:flex items-center gap-1">
               {[
                 { label: t.problem, id: 'problema' },
@@ -68,15 +68,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
                 </button>
               ))}
             </nav>
-          ) : (
-             <nav className="hidden lg:flex items-center gap-4">
-                <button 
-                  onClick={() => onViewChange('DASHBOARD')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'DASHBOARD' ? 'text-deepAqua bg-aqua/10' : 'text-slate-500 hover:text-deepAqua'}`}
-                >
-                  Dashboard
-                </button>
-             </nav>
           )}
         </div>
 
