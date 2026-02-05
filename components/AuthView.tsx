@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User, MOCK_DATA } from '../types';
-import { auth, saveUserProfile, googleProvider, getUserProfile } from '../firebase';
+import { auth, saveUserProfile, googleProvider, getUserProfile, db } from '../firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -10,7 +10,8 @@ import {
   deleteUser,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 interface AuthViewProps {
@@ -23,6 +24,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [verificationSent, setVerificationSent] = useState(false);
   const [resendStatus, setResendStatus] = useState('');
   
@@ -49,7 +51,14 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
   useEffect(() => {
     setError('');
+    setSuccessMessage('');
   }, [isLogin, role]);
+
+  // Filtra a senha para aceitar apenas letras minúsculas e números
+  const handlePasswordChange = (val: string) => {
+    const filtered = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+    setFormData({ ...formData, password: filtered });
+  };
 
   const handleAuthResult = async (fbUser: any) => {
     try {
@@ -95,6 +104,23 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!formData.email) {
+      setError('Digite seu e-mail para redefinir a senha.');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      await sendPasswordResetEmail(auth, formData.email);
+      setSuccessMessage('E-mail de redefinição enviado! Verifique sua caixa de entrada.');
+    } catch (err: any) {
+      setError(`Erro ao redefinir: ${err.code}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResendEmail = async () => {
     if (auth.currentUser) {
       try {
@@ -112,6 +138,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       if (isLogin) {
@@ -153,6 +180,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         setError('Este e-mail já está sendo usado.');
       } else if (err.code === 'auth/invalid-credential') {
         setError('E-mail ou senha incorretos.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha deve ter pelo menos 6 caracteres.');
       } else {
         setError(`Erro: ${err.code}`);
       }
@@ -217,6 +246,12 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             </div>
           )}
 
+          {successMessage && (
+            <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 animate-in fade-in duration-300">
+              ✅ {successMessage}
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-4">
             {!isLogin && (
               <div className="md:col-span-2 space-y-1">
@@ -228,9 +263,23 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
               <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua" />
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
-              <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua" />
+            <div className="space-y-1 relative">
+              <div className="flex justify-between items-center pr-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
+                {isLogin && (
+                   <button type="button" onClick={handleResetPassword} className="text-[9px] font-black uppercase text-deepAqua hover:underline tracking-widest">Esqueci minha senha</button>
+                )}
+              </div>
+              <input 
+                required 
+                type="password" 
+                value={formData.password} 
+                onChange={e => handlePasswordChange(e.target.value)} 
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:border-aqua outline-none transition-all" 
+              />
+              <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest px-2 mt-1">
+                Apenas letras minúsculas e números
+              </p>
             </div>
 
             {!isLogin && !isPatient && (
