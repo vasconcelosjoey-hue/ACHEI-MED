@@ -52,25 +52,21 @@ const PillarsSection: React.FC<{ t: any }> = ({ t }) => {
   }, []);
 
   const pillars = [
-    { data: t.p1, video: CONSTANTS.VIDEO_TECH_PILLAR, reverse: false },
-    { data: t.p2, video: CONSTANTS.VIDEO_DATA_PILLAR, reverse: true },
-    { data: t.p3, video: CONSTANTS.VIDEO_HERO_BG, reverse: false },
+    { data: t.p1, image: CONSTANTS.P1_IMAGE, reverse: false },
+    { data: t.p2, image: CONSTANTS.P2_IMAGE, reverse: true },
+    { data: t.p3, image: CONSTANTS.P3_IMAGE, reverse: false },
   ];
 
   return (
     <div ref={sectionRef} className="max-w-7xl mx-auto px-6 space-y-40 pb-40">
       {pillars.map((p, idx) => (
         <div key={idx} className={`pillar-row flex flex-col ${p.reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-16 lg:gap-32 items-center`}>
-          <div className="flex-1 w-full overflow-hidden rounded-[3.5rem] bg-slate-900 aspect-[16/10] relative shadow-2xl">
-            <video 
-              autoPlay 
-              muted 
-              loop 
-              playsInline 
+          <div className="flex-1 w-full overflow-hidden rounded-[3.5rem] bg-slate-100 aspect-[16/10] relative shadow-2xl">
+            <img 
+              src={p.image} 
+              alt={p.data.t}
               className="pillar-media w-full h-full object-cover will-change-transform"
-            >
-              <source src={p.video} type="video/mp4" />
-            </video>
+            />
             <div className="absolute inset-0 bg-slate-900/10 pointer-events-none"></div>
           </div>
           <div className="flex-1 pillar-content">

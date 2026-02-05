@@ -52,17 +52,6 @@ const Hero: React.FC<HeroProps> = ({ t, onCtaClick }) => {
 
   return (
     <div ref={heroRef} className="relative pt-32 pb-20 md:pt-56 md:pb-40 overflow-hidden bg-white">
-      {/* Background Video Layer */}
-      <video 
-        autoPlay 
-        muted 
-        loop 
-        playsInline 
-        className="absolute top-0 left-0 w-full h-full object-cover opacity-[0.05] -z-10 pointer-events-none"
-      >
-        <source src={CONSTANTS.VIDEO_HERO_BG} type="video/mp4" />
-      </video>
-
       {/* Animated Parallax Blobs */}
       <div ref={blob1Ref} className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[800px] h-[800px] bg-babyBlue/30 rounded-full blur-[120px] opacity-40 -z-10 animate-pulse-slow"></div>
       <div ref={blob2Ref} className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[600px] h-[600px] bg-aqua/20 rounded-full blur-[100px] opacity-30 -z-10"></div>

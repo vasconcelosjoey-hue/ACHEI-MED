@@ -65,14 +65,16 @@ export const MOCK_DATA = {
 };
 
 export const CONSTANTS = {
-  HERO_IMAGE: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070',
-  VIDEO_HERO_BG: 'https://assets.mixkit.co/videos/preview/mixkit-blue-abstract-glass-background-loop-41584-large.mp4',
-  VIDEO_TECH_PILLAR: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-blue-lines-loop-33045-large.mp4',
-  VIDEO_DATA_PILLAR: 'https://assets.mixkit.co/videos/preview/mixkit-scanning-digital-data-on-a-screen-41569-large.mp4',
-  VIDEO_BRIDGE: 'https://assets.mixkit.co/videos/preview/mixkit-digital-particles-in-slow-motion-41575-large.mp4',
-  P1_IMAGE: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000',
-  P2_IMAGE: 'https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&q=80&w=1000',
-  P3_IMAGE: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=1000',
+  // Hero Image: Professional doctor with high-tech vibe
+  HERO_IMAGE: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=1000',
+  // Pillar 1: Smart Waiting List (Concept of time/efficiency)
+  P1_IMAGE: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1000',
+  // Pillar 2: Data Security (Digital shielding/servers)
+  P2_IMAGE: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1000',
+  // Pillar 3: Attendant Management (Collaborative tech)
+  P3_IMAGE: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&q=80&w=1000',
+  // Bridge Background
+  BRIDGE_IMAGE: 'https://images.unsplash.com/photo-1504813184591-01592fd039e5?auto=format&fit=crop&q=80&w=2000',
   TEST1_IMAGE: 'https://i.pravatar.cc/150?u=test1',
   TEST2_IMAGE: 'https://i.pravatar.cc/150?u=test2',
   LINK_DEMO: '#',

@@ -36,8 +36,8 @@ const LandingView: React.FC<LandingViewProps> = ({ onStartClick }) => {
       }
     });
 
-    // Parallax on bridge background video
-    gsap.to(".bridge-video", {
+    // Parallax on bridge background
+    gsap.to(".bridge-image", {
       yPercent: 20,
       ease: "none",
       scrollTrigger: {
@@ -64,16 +64,15 @@ const LandingView: React.FC<LandingViewProps> = ({ onStartClick }) => {
       </section>
 
       <section className="bridge-section py-40 bg-slate-900 text-white overflow-hidden relative min-h-[60vh] flex items-center">
-        {/* Bridge Background Video */}
-        <video 
-          autoPlay 
-          muted 
-          loop 
-          playsInline 
-          className="bridge-video absolute inset-0 w-full h-full object-cover opacity-30 scale-125 pointer-events-none"
-        >
-          <source src={CONSTANTS.VIDEO_BRIDGE} type="video/mp4" />
-        </video>
+        {/* Bridge Background Image with Overlay */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img 
+            src={CONSTANTS.BRIDGE_IMAGE} 
+            className="bridge-image w-full h-full object-cover opacity-20 scale-125"
+            alt="Atmosfera Digital"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-transparent to-slate-900"></div>
+        </div>
         
         <div className="max-w-7xl mx-auto px-6 text-center relative z-10 bridge-content w-full">
           <div className="bridge-text">
