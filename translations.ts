@@ -12,7 +12,25 @@ export const translations: Record<Language, any> = {
       start: "Como Começar",
       contact: "Contato",
       cta: "Entrar no Sistema",
-      back: "Voltar para o Site"
+      back: "Voltar para o Site",
+      tutorialBtn: "TUTORIAL"
+    },
+    tutorial: {
+      next: "Próximo",
+      prev: "Anterior",
+      finish: "Finalizar Guia",
+      physician: [
+        { t: "Seu Hub de Performance", d: "Bem-vindo, Doutor(a). Este painel centraliza toda a sua operação clínica com foco em ocupação máxima." },
+        { t: "Sincronização Cloud", d: "Conecte seu Google Calendar no botão superior para sincronizar seus horários pessoais e evitar conflitos automáticos." },
+        { t: "Inteligência de Realocação", d: "Nossa IA monitora cancelamentos. Quando uma vaga abre, o sistema convoca automaticamente a lista de espera via e-mail e WhatsApp." },
+        { t: "Gestão de Pacientes", d: "Visualize o histórico de agendamentos e o status de confirmação em tempo real na sua lista principal." }
+      ],
+      patient: [
+        { t: "Sua Saúde Simplificada", d: "Bem-vindo ao Agenda Med. Aqui você gerencia suas consultas com tecnologia de ponta." },
+        { t: "Busca por Especialistas", d: "Use o botão 'Explorar' para encontrar médicos por especialidade, plano de saúde ou cidade na rede credenciada." },
+        { t: "Confirmações Inteligentes", d: "Após agendar, você receberá um e-mail de confirmação premium. Fique atento à sua caixa de entrada para o check-in digital." },
+        { t: "Histórico e Controle", d: "No seu painel, você pode acompanhar todas as suas consultas agendadas e o status de cada solicitação." }
+      ]
     },
     login: {
       title: "Portal AGENDA MED",
@@ -170,7 +188,8 @@ export const translations: Record<Language, any> = {
     }
   },
   'en': {
-    nav: { cta: "System Login", back: "To Website" },
+    nav: { cta: "System Login", back: "To Website", tutorialBtn: "GUIDE" },
+    tutorial: { next: "Next", prev: "Back", finish: "Get Started", physician: [], patient: [] },
     login: { title: "AGENDA MED Portal", subtitle: "Smart management", button: "Token Login" },
     app: { welcome: "AGENDA MED Dashboard", register: "New Appointment" },
     hero: { comingSoon: "Coming Soon!" },

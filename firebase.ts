@@ -1,4 +1,3 @@
-
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { 
   getFirestore, collection, addDoc, getDocs, query, where, 
@@ -21,7 +20,9 @@ const firebaseConfig = {
   appId: "1:665475472115:web:bb69bc1efa0264ad61f586"
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Singleton para o App do Firebase
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();

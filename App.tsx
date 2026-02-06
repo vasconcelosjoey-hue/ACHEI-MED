@@ -6,6 +6,7 @@ import DashboardContainer from './components/DashboardContainer';
 import Header from './components/Header';
 import NotificationPanel from './components/NotificationPanel';
 import LandingView from './components/LandingView';
+import OnboardingTutorial from './components/OnboardingTutorial';
 import { auth, getUserProfile } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<AppView>('LANDING');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -22,8 +24,13 @@ const App: React.FC = () => {
         const profile = await getUserProfile(fbUser.uid);
         if (profile) {
           setUser(profile);
-          // Se for a primeira vez carregando e não estiver no site, vai pro dashboard
           if (view === 'AUTH') setView('DASHBOARD');
+          
+          // Checar primeiro acesso para tutorial
+          const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${fbUser.uid}`);
+          if (!hasSeenTutorial) {
+            setShowTutorial(true);
+          }
         }
       } else {
         setUser(null);
@@ -47,6 +54,13 @@ const App: React.FC = () => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
+  const closeTutorial = () => {
+    if (user) {
+      localStorage.setItem(`tutorial_seen_${user.id}`, 'true');
+    }
+    setShowTutorial(false);
+  };
+
   if (isInitializing) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
@@ -62,6 +76,7 @@ const App: React.FC = () => {
         onLogout={handleLogout} 
         onViewChange={setView}
         onToggleNotifs={() => setShowNotifications(!showNotifications)}
+        onOpenTutorial={() => setShowTutorial(true)}
         unreadCount={notifications.filter(n => !n.read).length}
         view={view}
       />
@@ -86,6 +101,13 @@ const App: React.FC = () => {
           notifications={notifications} 
           onClose={() => setShowNotifications(false)}
           onMarkRead={markNotificationAsRead}
+        />
+      )}
+
+      {showTutorial && user && (
+        <OnboardingTutorial 
+          role={user.role} 
+          onClose={closeTutorial} 
         />
       )}
     </div>

@@ -8,11 +8,12 @@ interface HeaderProps {
   onLogout: () => void;
   onViewChange: (view: AppView) => void;
   onToggleNotifs: () => void;
+  onOpenTutorial?: () => void;
   unreadCount: number;
   view: AppView;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleNotifs, unreadCount, view }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleNotifs, onOpenTutorial, unreadCount, view }) => {
   const [scrolled, setScrolled] = useState(false);
   const t = translations['pt-BR'].nav;
 
@@ -35,7 +36,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
     }
   };
 
-  // Se estivermos na tela de AUTH, não mostramos o botão de entrar para não sobrepor
   const showCta = view === 'LANDING' && !user;
 
   return (
@@ -77,6 +77,16 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onViewChange, onToggleN
         <div className="flex items-center gap-2 md:gap-4">
           {user ? (
             <>
+              {/* Botão de Tutorial */}
+              {(view === 'DASHBOARD' || view === 'SEARCH') && (
+                <button 
+                  onClick={onOpenTutorial}
+                  className="bg-aqua/10 text-deepAqua px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-aqua/20 transition-all border border-aqua/30"
+                >
+                  {t.tutorialBtn}
+                </button>
+              )}
+
               <button 
                 onClick={onToggleNotifs}
                 className="relative p-2 rounded-xl bg-slate-50 text-slate-500 hover:bg-babyBlue/20 transition-all border border-slate-100"

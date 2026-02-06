@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserRole, User, MOCK_DATA } from '../types';
+import { UserRole, User } from '../types';
 import { auth, saveUserProfile, googleProvider, getUserProfile } from '../firebase';
 import { sendEmailViaResend, getWelcomeTemplate } from '../services/EmailService';
 import { 
@@ -8,10 +8,7 @@ import {
   signInWithEmailAndPassword, 
   sendEmailVerification,
   signOut,
-  deleteUser,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   sendPasswordResetEmail
 } from 'firebase/auth';
 
@@ -27,32 +24,20 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [verificationSent, setVerificationSent] = useState(false);
-  const [resendStatus, setResendStatus] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
   
   const [formData, setFormData] = useState({ 
     name: '', email: '', password: '',
     crm: '', whatsapp: '', specialty: ''
   });
 
-  const isPatient = role === 'PATIENT';
-
-  useEffect(() => {
-    getRedirectResult(auth).then(async (result) => {
-      if (result) {
-        setIsLoading(true);
-        await handleAuthResult(result.user);
-        setIsLoading(false);
-      }
-    }).catch((err) => {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(`Erro no redirecionamento: ${err.code}`);
-      }
-    });
-  }, []);
-
-  const handlePasswordChange = (val: string) => {
-    const filtered = val.toLowerCase().replace(/[^a-z0-9]/g, '');
-    setFormData({ ...formData, password: filtered });
+  const checkPasswordStrength = (pass: string) => {
+    let score = 0;
+    if (pass.length > 6) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    setPasswordStrength(score);
   };
 
   const handleAuthResult = async (fbUser: any) => {
@@ -61,18 +46,18 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       if (!profile) {
         profile = {
           id: fbUser.uid,
-          name: fbUser.displayName || 'Usuário Google',
-          email: fbUser.email || '',
+          name: fbUser.displayName || formData.name || 'Usuário',
+          email: fbUser.email || formData.email,
           role: role,
           avatar: fbUser.photoURL || undefined,
           verified: true
         };
         await saveUserProfile(fbUser.uid, profile);
-        // Enviar Boas-vindas para usuários Google
         await sendEmailViaResend(profile.email, 'Bem-vindo ao Agenda Med', getWelcomeTemplate(profile.name));
       }
+      onAuthSuccess(profile);
     } catch (err: any) {
-      setError(`Erro ao salvar perfil: ${err.code || err.message}`);
+      setError(`Erro ao processar perfil: ${err.message}`);
     }
   };
 
@@ -83,39 +68,11 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       const result = await signInWithPopup(auth, googleProvider);
       await handleAuthResult(result.user);
     } catch (err: any) {
-      setError(`Erro: ${err.code}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!formData.email) {
-      setError('Digite seu e-mail para redefinir a senha.');
-      return;
-    }
-    setIsLoading(true);
-    setError('');
-    try {
-      await sendPasswordResetEmail(auth, formData.email);
-      setSuccessMessage('E-mail de redefinição enviado!');
-    } catch (err: any) {
-      setError(`Erro: ${err.code}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendEmail = async () => {
-    if (auth.currentUser) {
-      try {
-        setResendStatus('Enviando...');
-        await sendEmailVerification(auth.currentUser);
-        setResendStatus('E-mail reenviado!');
-        setTimeout(() => setResendStatus(''), 3000);
-      } catch (err: any) {
-        setResendStatus('Erro ao enviar.');
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError('Falha na autenticação com Google.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,12 +84,18 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, formData.email, formData.password);
         if (!cred.user.emailVerified) {
-          setError('Sua conta ainda não foi verificada. Verifique seu e-mail.');
+          setError('E-mail não verificado. Verifique sua caixa de entrada.');
           await signOut(auth);
           setIsLoading(false);
           return;
         }
+        await handleAuthResult(cred.user);
       } else {
+        if (passwordStrength < 2) {
+          setError('Sua senha é muito fraca. Use letras e números.');
+          setIsLoading(false);
+          return;
+        }
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         await sendEmailVerification(cred.user);
         
@@ -146,15 +109,16 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           verified: false
         };
         await saveUserProfile(cred.user.uid, profile);
-        
-        // Enviar e-mail de Boas-vindas Premium
-        await sendEmailViaResend(formData.email, 'Bem-vindo ao Agenda Med!', getWelcomeTemplate(formData.name));
-        
         setVerificationSent(true);
-        await signOut(auth);
       }
     } catch (err: any) {
-      setError(`Erro: ${err.code}`);
+      const messages: any = {
+        'auth/email-already-in-use': 'Este e-mail já está em uso.',
+        'auth/wrong-password': 'Senha incorreta.',
+        'auth/user-not-found': 'Usuário não encontrado.',
+        'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.'
+      };
+      setError(messages[err.code] || 'Ocorreu um erro na autenticação.');
     } finally {
       setIsLoading(false);
     }
@@ -162,94 +126,128 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
 
   if (verificationSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 pt-24">
-        <div className="max-w-md w-full bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
-           <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">✉️</div>
-           <h2 className="text-2xl md:text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">E-mail Enviado!</h2>
-           <p className="text-slate-500 mb-8 text-sm leading-relaxed">Enviamos um link de ativação e as boas-vindas para <strong>{formData.email}</strong>. Verifique também o SPAM.</p>
-           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all">Fazer Login</button>
-           <button onClick={handleResendEmail} disabled={!!resendStatus} className="mt-6 text-[10px] font-black uppercase text-deepAqua tracking-widest">{resendStatus || 'Não recebeu? Reenviar'}</button>
+      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 pt-20">
+        <div className="max-w-md w-full bg-white rounded-[3rem] p-10 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
+           <div className="w-20 h-20 bg-teal-50 text-teal-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-8 animate-bounce">✉️</div>
+           <h2 className="text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">Quase lá!</h2>
+           <p className="text-slate-500 mb-10 leading-relaxed">
+             Enviamos um link de confirmação para <strong>{formData.email}</strong>.<br/>
+             Acesse seu e-mail para ativar sua conta.
+           </p>
+           <button 
+             onClick={() => { setVerificationSent(false); setIsLogin(true); }} 
+             className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all"
+           >
+             Ir para Login
+           </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center p-4 pt-28 md:pt-32 transition-colors duration-700 ${isPatient ? 'bg-slate-50' : 'bg-slate-100'}`}>
-      <div className="w-full max-w-xl bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative z-10 flex flex-col border border-slate-100">
-        <div className="flex justify-between items-center mb-6 md:mb-8">
-          <button onClick={onBack} className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-slate-900">Voltar</button>
-          <div className="flex p-1 bg-slate-100 rounded-xl md:rounded-2xl">
-            <button onClick={() => setRole('PATIENT')} className={`px-4 md:px-6 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-lg md:rounded-xl transition-all ${isPatient ? 'bg-white text-deepAqua shadow-sm' : 'text-slate-400'}`}>Paciente</button>
-            <button onClick={() => setRole('PHYSICIAN')} className={`px-4 md:px-6 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-lg md:rounded-xl transition-all ${!isPatient ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}>Médico</button>
+    <div className={`min-h-screen flex flex-col items-center justify-center p-4 pt-24 transition-colors duration-1000 ${role === 'PATIENT' ? 'bg-slate-50' : 'bg-slate-100'}`}>
+      <div className="w-full max-w-lg bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative border border-slate-100">
+        <div className="flex justify-between items-center mb-10">
+          <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-slate-900 transition-colors">Voltar</button>
+          <div className="flex p-1 bg-slate-100 rounded-2xl">
+            <button onClick={() => setRole('PATIENT')} className={`px-6 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${role === 'PATIENT' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}>Paciente</button>
+            <button onClick={() => setRole('PHYSICIAN')} className={`px-6 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${role === 'PHYSICIAN' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}>Médico</button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-          <div className="text-center mb-2">
-            <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-slate-900 leading-tight">
-              {isLogin ? 'Agenda Med Cloud' : 'Criar Hub Saúde'}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight leading-none">
+              {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
             </h1>
-            <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1">{isLogin ? 'Entrar no sistema' : 'Junte-se a nós'}</p>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-3">Health OS v2.0</p>
           </div>
 
-          {(error || successMessage) && (
-            <div className={`p-4 rounded-xl text-xs font-bold border animate-in slide-in-from-top-2 duration-300 ${error ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
-              {error ? `⚠️ ${error}` : `✅ ${successMessage}`}
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 animate-in slide-in-from-top-2">
+              ⚠️ {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {!isLogin && (
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border rounded-xl p-3 md:p-4 text-sm outline-none border-slate-100 focus:border-aqua" />
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:border-teal-400 transition-colors" placeholder="Ex: Dr. Silva" />
               </div>
             )}
             <div className="space-y-1">
-              <label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
-              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 md:p-4 text-sm focus:border-aqua outline-none" />
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail Corporativo</label>
+              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:border-teal-400 transition-colors" placeholder="seu@email.com" />
             </div>
             <div className="space-y-1 relative">
-              <div className="flex justify-between items-center pr-2">
-                <label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
-                {isLogin && <button type="button" onClick={handleResetPassword} className="text-[8px] md:text-[9px] font-black uppercase text-deepAqua hover:underline tracking-widest">Esqueci</button>}
-              </div>
-              <input required type="password" value={formData.password} onChange={e => handlePasswordChange(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 md:p-4 text-sm focus:border-aqua outline-none" />
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">Senha</label>
+              <input 
+                required 
+                type="password" 
+                value={formData.password} 
+                onChange={e => {
+                  setFormData({...formData, password: e.target.value});
+                  checkPasswordStrength(e.target.value);
+                }} 
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:border-teal-400 transition-colors" 
+                placeholder="••••••••"
+              />
+              {!isLogin && formData.password && (
+                <div className="flex gap-1 mt-2 px-1">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${passwordStrength >= i ? 'bg-teal-500' : 'bg-slate-100'}`}></div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {!isLogin && !isPatient && (
-              <>
+            {!isLogin && role === 'PHYSICIAN' && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">CRM</label>
-                  <input required type="text" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 text-sm" />
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">CRM</label>
+                  <input required type="text" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm" placeholder="00000-UF" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">WhatsApp</label>
-                  <input required type="tel" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 text-sm" />
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">WhatsApp</label>
+                  <input required type="tel" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm" placeholder="92 9..." />
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="space-y-4">
-            <button type="submit" disabled={isLoading} className={`w-full py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-white shadow-xl flex items-center justify-center transition-all ${isPatient ? 'neo-gradient' : 'bg-slate-900'}`}>
-              {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar agora' : 'Criar Conta')}
+          <div className="pt-4 space-y-4">
+            <button 
+              type="submit" 
+              disabled={isLoading} 
+              className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 ${role === 'PATIENT' ? 'neo-gradient' : 'bg-slate-900'}`}
+            >
+              {isLoading ? <div className="loader !border-white !border-t-transparent"></div> : (isLogin ? 'Entrar no Sistema' : 'Finalizar Cadastro')}
             </button>
 
-            <div className="relative py-2">
+            <div className="relative py-4">
                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-               <div className="relative flex justify-center text-[9px] md:text-[10px] uppercase font-black tracking-widest"><span className="bg-white px-4 text-slate-300">ou</span></div>
+               <div className="relative flex justify-center text-[9px] uppercase font-black tracking-widest"><span className="bg-white px-4 text-slate-300">ou continue com</span></div>
             </div>
 
-            <button type="button" onClick={handleGoogleLogin} disabled={isLoading} className="w-full py-3.5 border border-slate-200 rounded-xl flex items-center justify-center gap-4 hover:bg-slate-50 active:scale-[0.98]">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4 md:w-5 md:h-5" alt="Google" />
-              <span className="text-xs md:text-sm font-bold text-slate-700">Google Login</span>
+            <button 
+              type="button" 
+              onClick={handleGoogleLogin} 
+              disabled={isLoading} 
+              className="w-full py-4 border border-slate-200 rounded-2xl flex items-center justify-center gap-4 hover:bg-slate-50 transition-all active:scale-95"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+              <span className="text-sm font-bold text-slate-700">Conta Google</span>
             </button>
           </div>
           
-          <button type="button" onClick={() => setIsLogin(!isLogin)} className="w-full text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-deepAqua">
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já possui conta? Fazer Login'}
+          <button 
+            type="button" 
+            onClick={() => { setIsLogin(!isLogin); setError(''); }} 
+            className="w-full text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-teal-600 transition-colors"
+          >
+            {isLogin ? 'Não tem conta? Crie agora' : 'Já possui conta? Entre aqui'}
           </button>
         </form>
       </div>
