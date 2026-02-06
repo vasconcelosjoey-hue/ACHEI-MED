@@ -1,7 +1,5 @@
 {
   "name": "AGENDA MED",
   "description": "Plataforma de gestão médica com realocação inteligente via IA e lista de espera.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
+  "requestFramePermissions": []
 }

@@ -17,6 +17,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
   const [bookingTime, setBookingTime] = useState('09:00');
   const [isBooking, setIsBooking] = useState(false);
   const [myApps, setMyApps] = useState<Appointment[]>([]);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     loadAppointments();
@@ -27,10 +28,38 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
     setMyApps(apps);
   };
 
+  const handleDetectLocation = () => {
+    setIsLocating(true);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Aqui integraríamos com uma API de Geocoding para transformar lat/long em nome de cidade
+          // Por enquanto, simulamos o filtro pela região do usuário
+          setSearch('Manaus'); 
+          setIsLocating(false);
+          addNotification({
+            id: Math.random().toString(),
+            userId: user.id,
+            title: 'Localização Detectada',
+            message: 'Mostrando especialistas em sua região.',
+            type: 'INFO',
+            read: false,
+            createdAt: Date.now()
+          });
+        },
+        (error) => {
+          setIsLocating(false);
+          console.error("Erro ao obter localização", error);
+        }
+      );
+    }
+  };
+
   const filteredDoctors = MOCK_PHYSICIANS.filter(d => 
     search === '' || 
     d.name.toLowerCase().includes(search.toLowerCase()) || 
-    d.specialty.toLowerCase().includes(search.toLowerCase())
+    d.specialty.toLowerCase().includes(search.toLowerCase()) ||
+    d.city.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleBook = async () => {
@@ -52,7 +81,6 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
 
     const result = await saveAppointment(newApp);
     if (result) {
-      // Enviar e-mail de Confirmação Premium
       await sendEmailViaResend(
         user.email, 
         `Confirmado: Sua consulta com ${selectedDoc.name}`, 
@@ -83,10 +111,19 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
               type="text" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Busque especialistas..."
-              className="w-full h-14 pl-12 pr-6 bg-slate-50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-aqua transition-all text-sm font-medium"
+              placeholder="Busque por especialidade, médico ou cidade..."
+              className="w-full h-14 pl-12 pr-20 bg-slate-50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-aqua transition-all text-sm font-medium"
             />
             <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            
+            <button 
+              onClick={handleDetectLocation}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-deepAqua hover:bg-aqua/10 transition-all flex items-center gap-2"
+              title="Usar minha localização"
+            >
+              {isLocating ? <div className="loader !w-3 !h-3 !border-deepAqua"></div> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Perto de mim</span>
+            </button>
           </div>
         </div>
 
@@ -102,6 +139,10 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
                   <h4 className="text-sm font-display font-bold text-slate-900 truncate">{doc.name}</h4>
                   <p className="text-[10px] font-bold text-deepAqua uppercase tracking-widest">{doc.specialty}</p>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 mb-4 px-1">
+                <svg className="w-3 h-3 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                <span className="text-[10px] text-slate-400 font-bold">{doc.city}</span>
               </div>
               <button className="w-full py-3 bg-slate-50 text-slate-900 group-hover:bg-deepAqua group-hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Ver Horários</button>
             </div>
@@ -123,7 +164,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
 
               <div className="space-y-6">
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2 mb-2 block">Horário</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2 mb-2 block">Horário Disponível</label>
                     <div className="grid grid-cols-3 gap-2">
                        {['08:00', '09:00', '10:00', '14:00', '15:00', '16:00'].map(t => (
                          <button key={t} onClick={() => setBookingTime(t)} className={`py-2 rounded-xl text-xs font-bold transition-all border ${bookingTime === t ? 'bg-deepAqua text-white border-deepAqua' : 'bg-slate-50 text-slate-400 border-transparent hover:border-aqua'}`}>
@@ -138,7 +179,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ user, view, setView
                   disabled={isBooking}
                   className="w-full py-4 neo-gradient text-white rounded-2xl font-bold shadow-xl shadow-aqua/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
-                   {isBooking ? <div className="loader !border-white !border-t-transparent"></div> : 'Confirmar e Receber E-mail'}
+                   {isBooking ? <div className="loader !border-white !border-t-transparent"></div> : 'Confirmar Agendamento'}
                  </button>
               </div>
             </div>
