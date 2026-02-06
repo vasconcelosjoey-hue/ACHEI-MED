@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CONSTANTS } from '../types';
 import gsap from 'gsap';
 
@@ -10,9 +10,20 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ t, onCtaClick }) => {
   const heroRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const blob1Ref = useRef<HTMLDivElement>(null);
   const blob2Ref = useRef<HTMLDivElement>(null);
+  
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const images = CONSTANTS.HERO_IMAGES;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % images.length);
+    }, 5000); // Muda a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, [images.length]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -23,14 +34,6 @@ const Hero: React.FC<HeroProps> = ({ t, onCtaClick }) => {
         stagger: 0.2,
         duration: 1.2,
         ease: "power4.out"
-      });
-
-      gsap.from(imageRef.current, {
-        scale: 1.2,
-        opacity: 0,
-        duration: 1.8,
-        ease: "expo.out",
-        delay: 0.4
       });
 
       // Parallax effect on mouse move
@@ -87,22 +90,46 @@ const Hero: React.FC<HeroProps> = ({ t, onCtaClick }) => {
           </div>
         </div>
 
-        <div ref={imageRef} className="relative group perspective-1000">
-          <div className="relative overflow-hidden rounded-[4rem] shadow-[-40px_40px_80px_rgba(0,0,0,0.1)] border-[1px] border-white ring-1 ring-slate-100 transform rotate-2 hover:rotate-0 transition-all duration-1000">
-            <img 
-              src={CONSTANTS.HERO_IMAGE} 
-              alt="AGENDA MED" 
-              className="w-full h-full object-cover aspect-[4/5] transition-all duration-1000 scale-110 group-hover:scale-100"
-            />
-            <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/60 via-transparent to-transparent opacity-60"></div>
+        <div className="relative group perspective-1000">
+          <div ref={imageContainerRef} className="relative overflow-hidden rounded-[3rem] md:rounded-[4rem] shadow-[-40px_40px_80px_rgba(0,0,0,0.1)] border-[1px] border-white ring-1 ring-slate-100 transform md:rotate-2 hover:rotate-0 transition-all duration-1000 aspect-[4/5] bg-slate-100">
+            {images.map((img, index) => (
+              <div
+                key={img}
+                className={`absolute inset-0 transition-opacity duration-[1500ms] ease-in-out ${
+                  index === currentIdx ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+              >
+                <img 
+                  src={img} 
+                  alt="AI Medical Context" 
+                  className={`w-full h-full object-cover transform transition-transform duration-[10000ms] ease-linear ${
+                    index === currentIdx ? 'scale-110' : 'scale-100'
+                  }`}
+                />
+              </div>
+            ))}
+            
+            <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/60 via-transparent to-transparent opacity-60 z-20"></div>
             
             {/* Live Badge */}
-            <div className="absolute bottom-12 left-12 bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20 shadow-2xl">
+            <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 bg-white/10 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/20 shadow-2xl z-30">
                <div className="flex items-center gap-4">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-white font-display font-bold text-2xl tracking-tighter">98.4% Ocupação</p>
+                  <p className="text-white font-display font-bold text-xl md:text-2xl tracking-tighter">98.4% Ocupação</p>
                </div>
-               <p className="text-white/50 text-[10px] font-black uppercase tracking-widest mt-2">Média Global do Sistema</p>
+               <p className="text-white/50 text-[10px] font-black uppercase tracking-widest mt-2">Sincronização Cloud Ativa</p>
+            </div>
+
+            {/* Pagination Dots */}
+            <div className="absolute top-1/2 right-6 -translate-y-1/2 flex flex-col gap-3 z-30">
+              {images.map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                    i === currentIdx ? 'bg-white h-6' : 'bg-white/30'
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>

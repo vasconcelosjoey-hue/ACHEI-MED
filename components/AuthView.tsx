@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, User, MOCK_DATA } from '../types';
-import { auth, saveUserProfile, googleProvider, getUserProfile, db } from '../firebase';
+import { auth, saveUserProfile, googleProvider, getUserProfile } from '../firebase';
+import { sendEmailViaResend, getWelcomeTemplate } from '../services/EmailService';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -49,11 +50,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     });
   }, []);
 
-  useEffect(() => {
-    setError('');
-    setSuccessMessage('');
-  }, [isLogin, role]);
-
   const handlePasswordChange = (val: string) => {
     const filtered = val.toLowerCase().replace(/[^a-z0-9]/g, '');
     setFormData({ ...formData, password: filtered });
@@ -72,6 +68,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           verified: true
         };
         await saveUserProfile(fbUser.uid, profile);
+        // Enviar Boas-vindas para usuários Google
+        await sendEmailViaResend(profile.email, 'Bem-vindo ao Agenda Med', getWelcomeTemplate(profile.name));
       }
     } catch (err: any) {
       setError(`Erro ao salvar perfil: ${err.code || err.message}`);
@@ -137,6 +135,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       } else {
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         await sendEmailVerification(cred.user);
+        
         const profile: Partial<User> = {
           id: cred.user.uid,
           name: formData.name,
@@ -147,6 +146,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
           verified: false
         };
         await saveUserProfile(cred.user.uid, profile);
+        
+        // Enviar e-mail de Boas-vindas Premium
+        await sendEmailViaResend(formData.email, 'Bem-vindo ao Agenda Med!', getWelcomeTemplate(formData.name));
+        
         setVerificationSent(true);
         await signOut(auth);
       }
@@ -160,11 +163,11 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
   if (verificationSent) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 pt-24">
-        <div className="max-w-md w-full bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 text-center shadow-2xl border border-slate-100">
+        <div className="max-w-md w-full bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">✉️</div>
-           <h2 className="text-2xl md:text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">E-mail de Ativação!</h2>
-           <p className="text-slate-500 mb-8 text-sm leading-relaxed">Verifique <strong>{formData.email}</strong>, inclusive no SPAM.</p>
-           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl">Fazer Login</button>
+           <h2 className="text-2xl md:text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">E-mail Enviado!</h2>
+           <p className="text-slate-500 mb-8 text-sm leading-relaxed">Enviamos um link de ativação e as boas-vindas para <strong>{formData.email}</strong>. Verifique também o SPAM.</p>
+           <button onClick={() => { setVerificationSent(false); setIsLogin(true); }} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all">Fazer Login</button>
            <button onClick={handleResendEmail} disabled={!!resendStatus} className="mt-6 text-[10px] font-black uppercase text-deepAqua tracking-widest">{resendStatus || 'Não recebeu? Reenviar'}</button>
         </div>
       </div>
