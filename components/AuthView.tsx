@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
 import { UserRole, User } from '../types';
-import { auth, saveUserProfile, googleProvider, getUserProfile } from '../firebase';
+import { auth, saveUserProfile, getUserProfile } from '../firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   sendEmailVerification,
   signOut,
-  signInWithPopup,
   sendPasswordResetEmail
 } from 'firebase/auth';
 
@@ -55,7 +54,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       }
       onAuthSuccess(profile);
     } catch (err: any) {
-      setError(`Erro ao recuperar perfil: ${err.message}`);
+      setError(`Erro ao carregar seu perfil: ${err.message}`);
     }
   };
 
@@ -67,7 +66,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, formData.email, formData.password);
         if (!cred.user.emailVerified) {
-          setError('Sua conta ainda não foi verificada. Verifique seu e-mail.');
+          setError('Sua conta ainda não foi verificada. Verifique seu e-mail para acessar o sistema.');
           await signOut(auth);
           setIsLoading(false);
           return;
@@ -77,7 +76,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         await sendEmailVerification(cred.user);
         
-        // Initial profile creation even before verification
         const profile: Partial<User> = {
           id: cred.user.uid,
           name: formData.name,
@@ -92,31 +90,17 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
         setVerificationSent(true);
       }
     } catch (err: any) {
-      console.error(err);
       if (err.code === 'auth/invalid-credential') {
         setError('E-mail ou senha incorretos.');
       } else if (err.code === 'auth/email-already-in-use') {
-        setError('Este e-mail já está em uso.');
+        setError('Este e-mail já está sendo utilizado por outra conta.');
       } else if (err.code === 'auth/weak-password') {
         setError('A senha deve ter pelo menos 6 caracteres.');
       } else {
-        setError('Falha na autenticação. Tente novamente.');
+        setError('Erro na autenticação. Verifique sua conexão e tente novamente.');
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
-      setError('Digite seu e-mail no campo acima primeiro.');
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, formData.email);
-      alert('E-mail de recuperação enviado com sucesso!');
-    } catch (err: any) {
-      setError('Erro ao enviar recuperação: ' + err.message);
     }
   };
 
@@ -124,30 +108,36 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
         <div className="max-w-md w-full bg-white rounded-[3rem] p-10 text-center shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
-           <div className="w-20 h-20 bg-teal-50 text-teal-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-8 animate-bounce">✉️</div>
+           <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-[2.5rem] flex items-center justify-center text-5xl mx-auto mb-8 animate-bounce shadow-inner">✉️</div>
            <h2 className="text-3xl font-display font-bold text-slate-900 mb-4 tracking-tight">Verifique seu E-mail</h2>
-           <p className="text-slate-500 mb-6 leading-relaxed">Enviamos um link de confirmação para: <br/><strong>{formData.email}</strong></p>
+           <p className="text-slate-500 mb-8 leading-relaxed">
+             Quase lá! Enviamos um link de ativação para:<br/>
+             <span className="font-bold text-slate-800">{formData.email}</span>
+           </p>
            
-           <div className="p-4 bg-slate-50 rounded-2xl mb-10 text-xs text-slate-400 italic">
-             Após clicar no link enviado ao seu e-mail, clique no botão abaixo para fazer login e acessar a plataforma.
+           <div className="bg-teal-50/50 p-6 rounded-3xl mb-10 border border-teal-100/50">
+             <p className="text-xs text-teal-700 font-medium leading-relaxed">
+               Confirme seu e-mail na sua caixa de entrada e clique no botão abaixo para fazer login e entrar no <strong>Agenda Med</strong>.
+             </p>
            </div>
 
            <button 
             onClick={() => { 
               setVerificationSent(false); 
               setIsLogin(true); 
-              setFormData({...formData, password: ''}); // Clear password for security
+              setFormData(prev => ({ ...prev, password: '' })); // Limpa a senha por segurança
             }} 
-            className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold shadow-xl transform active:scale-95 transition-all"
+            className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold shadow-2xl shadow-slate-900/20 transform active:scale-95 transition-all hover:bg-slate-800 flex items-center justify-center gap-3"
            >
-             Já Verifiquei, Ir para Login
+             <span>Ir para Login do Agenda Med</span>
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
            </button>
            
            <button 
             onClick={() => setVerificationSent(false)}
-            className="mt-6 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900 tracking-widest"
+            className="mt-8 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900 tracking-widest transition-colors"
            >
-             Alterar E-mail / Voltar
+             Quero usar outro e-mail
            </button>
         </div>
       </div>
@@ -177,12 +167,12 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
               <>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">Nome Completo</label>
-                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-teal-100" placeholder="Seu nome completo" />
+                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:ring-2 focus:ring-teal-100 outline-none" placeholder="Seu nome completo" />
                 </div>
                 {role === 'PHYSICIAN' && (
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">CRM</label>
-                    <input required type="text" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-teal-100" placeholder="00000-UF" />
+                    <input required type="text" value={formData.crm} onChange={e => setFormData({...formData, crm: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:ring-2 focus:ring-teal-100 outline-none" placeholder="000000-UF" />
                   </div>
                 )}
               </>
@@ -190,7 +180,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest px-2">E-mail</label>
-              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-teal-100" placeholder="seu@email.com" />
+              <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:ring-2 focus:ring-teal-100 outline-none" placeholder="seu@email.com" />
             </div>
             
             <div className="space-y-1 relative">
@@ -201,7 +191,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
                   type={showPassword ? "text" : "password"} 
                   value={formData.password} 
                   onChange={e => setFormData({...formData, password: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 pr-12 text-sm outline-none focus:ring-2 focus:ring-teal-100" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 pr-12 text-sm focus:ring-2 focus:ring-teal-100 outline-none" 
                   placeholder="••••••••"
                 />
                 <button 
@@ -226,8 +216,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
                   type="tel" 
                   value={formData.whatsapp} 
                   onChange={e => setFormData({...formData, whatsapp: formatWhatsApp(e.target.value)})} 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-teal-100" 
-                  placeholder="(92) 99999-9999" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm focus:ring-2 focus:ring-teal-100 outline-none" 
+                  placeholder="(00) 00000-0000" 
                 />
               </div>
             )}
@@ -237,17 +227,23 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             <button 
               type="submit" 
               disabled={isLoading} 
-              className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-95 flex items-center justify-center ${role === 'PATIENT' ? 'neo-gradient' : 'bg-slate-900 hover:bg-slate-800'}`}
+              className={`w-full py-5 rounded-2xl font-bold text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 ${role === 'PATIENT' ? 'neo-gradient' : 'bg-slate-900 hover:bg-slate-800'}`}
             >
               {isLoading ? (
                 <div className="loader !w-5 !h-5 !border-2 !border-white !border-t-transparent"></div>
-              ) : (isLogin ? 'Entrar no Sistema' : 'Criar Minha Conta')}
+              ) : (isLogin ? 'Entrar no Sistema' : 'Finalizar Cadastro')}
             </button>
             
             {isLogin && (
               <button 
                 type="button" 
-                onClick={handleForgotPassword}
+                onClick={() => {
+                  if (!formData.email) {
+                    setError('Digite seu e-mail para recuperar a senha.');
+                    return;
+                  }
+                  sendPasswordResetEmail(auth, formData.email).then(() => alert('E-mail de recuperação enviado!')).catch(err => setError('Erro: ' + err.message));
+                }}
                 className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-teal-600 tracking-widest text-center transition-colors"
               >
                 Esqueci minha senha
@@ -255,18 +251,17 @@ const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onBack }) => {
             )}
           </div>
           
-          <div className="mt-6 flex items-center justify-center gap-4 text-[10px] font-black uppercase text-slate-300 tracking-widest">
-            <div className="h-[1px] flex-1 bg-slate-100"></div>
-            <span>OU</span>
-            <div className="h-[1px] flex-1 bg-slate-100"></div>
+          <div className="relative py-4">
+             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+             <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest"><span className="bg-white px-4 text-slate-300">Ou</span></div>
           </div>
 
           <button 
             type="button" 
             onClick={() => setIsLogin(!isLogin)} 
-            className="w-full text-[10px] font-black uppercase text-teal-600 hover:text-teal-800 tracking-widest text-center mt-4 transition-colors"
+            className="w-full text-[10px] font-black uppercase text-teal-600 hover:text-teal-800 tracking-widest text-center transition-colors"
           >
-            {isLogin ? 'Não tem conta? Cadastre-se' : 'Já possui conta? Faça Login'}
+            {isLogin ? 'Não possui conta? Cadastre-se' : 'Já possui conta? Faça Login'}
           </button>
         </form>
       </div>

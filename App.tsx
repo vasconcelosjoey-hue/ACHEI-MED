@@ -21,34 +21,41 @@ const App: React.FC = () => {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        // If email is not verified, we shouldn't consider them logged in
+        // Se o e-mail não estiver verificado, limpamos o usuário e permanecemos em landing/auth
         if (!fbUser.emailVerified) {
           setUser(null);
           setIsInitializing(false);
           return;
         }
 
-        const profile = await getUserProfile(fbUser.uid);
-        if (profile) {
-          setUser(profile);
-          // If we were on Landing or Auth, move to Dashboard
-          if (view === 'LANDING' || view === 'AUTH') {
-            setView('DASHBOARD');
+        try {
+          const profile = await getUserProfile(fbUser.uid);
+          if (profile && profile.role) {
+            setUser(profile);
+            
+            // Redirecionamento automático após login bem sucedido
+            if (view === 'LANDING' || view === 'AUTH') {
+              setView('DASHBOARD');
+            }
+            
+            // Lógica do Tutorial Automático para primeiro acesso
+            const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${fbUser.uid}`);
+            if (!hasSeenTutorial) {
+              setShowTutorial(true);
+            }
+          } else {
+            // Se o perfil não existir ou não tiver role, forçamos o logout ou auth
+            setUser(null);
+            if (view !== 'LANDING') setView('AUTH');
           }
-          
-          // Check for tutorial visibility
-          const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${fbUser.uid}`);
-          if (!hasSeenTutorial) {
-            setShowTutorial(true);
-          }
-        } else {
-          // Profile not found in Firestore - shouldn't happen but let's be safe
+        } catch (error) {
+          console.error("Erro ao carregar perfil do usuário:", error);
           setUser(null);
         }
       } else {
         setUser(null);
-        // If we are on a protected view but logged out, go to Landing
-        if (view === 'DASHBOARD' || view === 'SEARCH' || view === 'PROFILE') {
+        // Proteção de rotas: se deslogar, volta para a landing page
+        if (['DASHBOARD', 'SEARCH', 'PROFILE'].includes(view)) {
           setView('LANDING');
         }
       }
@@ -83,13 +90,12 @@ const App: React.FC = () => {
       <div className="h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="loader !w-12 !h-12 !border-4"></div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Iniciando Health OS...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Iniciando Agenda Med...</p>
         </div>
       </div>
     );
   }
 
-  // Determine current component to render
   const renderContent = () => {
     if (view === 'LANDING') {
       return <LandingView onStartClick={() => setView('AUTH')} />;
@@ -102,8 +108,8 @@ const App: React.FC = () => {
       }} onBack={() => setView('LANDING')} />;
     }
 
-    // Protected views - must have user
-    if (user) {
+    // Só renderiza o dashboard se o usuário e sua role existirem (evita erro de role of null)
+    if (user && user.role) {
       return (
         <DashboardContainer 
           user={user} 
@@ -114,7 +120,7 @@ const App: React.FC = () => {
       );
     }
 
-    // Fallback for protected view without user
+    // Fallback padrão caso tente acessar dashboard sem user
     return <AuthView onAuthSuccess={(profile) => {
       setUser(profile);
       setView('DASHBOARD');
@@ -145,7 +151,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {showTutorial && user && (
+      {showTutorial && user && user.role && (
         <OnboardingTutorial 
           role={user.role} 
           onClose={closeTutorial} 
