@@ -20,20 +20,37 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser && fbUser.emailVerified) {
+      if (fbUser) {
+        // If email is not verified, we shouldn't consider them logged in
+        if (!fbUser.emailVerified) {
+          setUser(null);
+          setIsInitializing(false);
+          return;
+        }
+
         const profile = await getUserProfile(fbUser.uid);
         if (profile) {
           setUser(profile);
-          if (view === 'AUTH') setView('DASHBOARD');
+          // If we were on Landing or Auth, move to Dashboard
+          if (view === 'LANDING' || view === 'AUTH') {
+            setView('DASHBOARD');
+          }
           
-          // Checar primeiro acesso para tutorial
+          // Check for tutorial visibility
           const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${fbUser.uid}`);
           if (!hasSeenTutorial) {
             setShowTutorial(true);
           }
+        } else {
+          // Profile not found in Firestore - shouldn't happen but let's be safe
+          setUser(null);
         }
       } else {
         setUser(null);
+        // If we are on a protected view but logged out, go to Landing
+        if (view === 'DASHBOARD' || view === 'SEARCH' || view === 'PROFILE') {
+          setView('LANDING');
+        }
       }
       setIsInitializing(false);
     });
@@ -64,10 +81,45 @@ const App: React.FC = () => {
   if (isInitializing) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
-        <div className="loader !w-12 !h-12 !border-4"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="loader !w-12 !h-12 !border-4"></div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Iniciando Health OS...</p>
+        </div>
       </div>
     );
   }
+
+  // Determine current component to render
+  const renderContent = () => {
+    if (view === 'LANDING') {
+      return <LandingView onStartClick={() => setView('AUTH')} />;
+    }
+    
+    if (view === 'AUTH') {
+      return <AuthView onAuthSuccess={(profile) => {
+        setUser(profile);
+        setView('DASHBOARD');
+      }} onBack={() => setView('LANDING')} />;
+    }
+
+    // Protected views - must have user
+    if (user) {
+      return (
+        <DashboardContainer 
+          user={user} 
+          view={view} 
+          setView={setView}
+          addNotification={addNotification}
+        />
+      );
+    }
+
+    // Fallback for protected view without user
+    return <AuthView onAuthSuccess={(profile) => {
+      setUser(profile);
+      setView('DASHBOARD');
+    }} onBack={() => setView('LANDING')} />;
+  };
 
   return (
     <div className="min-h-screen bg-white selection:bg-aqua selection:text-deepAqua">
@@ -82,18 +134,7 @@ const App: React.FC = () => {
       />
 
       <main className="transition-all duration-500">
-        {view === 'LANDING' ? (
-          <LandingView onStartClick={() => setView('AUTH')} />
-        ) : view === 'AUTH' ? (
-          <AuthView onAuthSuccess={() => setView('DASHBOARD')} onBack={() => setView('LANDING')} />
-        ) : (
-          <DashboardContainer 
-            user={user!} 
-            view={view} 
-            setView={setView}
-            addNotification={addNotification}
-          />
-        )}
+        {renderContent()}
       </main>
 
       {showNotifications && (
