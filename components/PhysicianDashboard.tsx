@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Notification, Appointment } from '../types';
-import { subscribeToAppointments, updateGoogleSync } from '../firebase';
+import { subscribeToAppointments, saveUserProfile } from '../firebase';
 
 interface PhysicianDashboardProps {
   user: User;
@@ -10,8 +9,9 @@ interface PhysicianDashboardProps {
 
 const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotification }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isGoogleConnected, setIsGoogleConnected] = useState((user as any).googleCalendarConnected || false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [rules, setRules] = useState(user.availabilityRules || { start: "08:00", end: "18:00", slotDuration: 30 });
 
   useEffect(() => {
     const unsub = subscribeToAppointments(user.id, 'PHYSICIAN', (apps) => {
@@ -20,24 +20,20 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
     return () => unsub();
   }, [user.id]);
 
-  const handleGoogleConnect = async () => {
+  const handleSaveRules = async () => {
     setIsSyncing(true);
-    // Simulação de OAuth 
-    setTimeout(async () => {
-      const newState = !isGoogleConnected;
-      await updateGoogleSync(user.id, newState);
-      setIsGoogleConnected(newState);
-      setIsSyncing(false);
-      addNotification({
-        id: Math.random().toString(),
-        userId: user.id,
-        title: newState ? 'Google Agenda Conectada' : 'Agenda Desconectada',
-        message: newState ? 'Seus eventos agora são sincronizados automaticamente.' : 'A sincronização foi pausada.',
-        type: 'SUCCESS',
-        read: false,
-        createdAt: Date.now()
-      });
-    }, 2000);
+    await saveUserProfile(user.id, { availabilityRules: rules });
+    addNotification({
+      id: Math.random().toString(),
+      userId: user.id,
+      title: 'Configurações Salvas',
+      message: 'Sua disponibilidade foi atualizada para os pacientes.',
+      type: 'SUCCESS',
+      read: false,
+      createdAt: Date.now()
+    });
+    setIsSyncing(false);
+    setShowConfig(false);
   };
 
   return (
@@ -46,54 +42,45 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
         <div className="flex items-center gap-6">
            <img src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=0D9488&color=fff`} className="w-16 h-16 rounded-2xl border-2 border-white/10" />
            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-aqua mb-1">Painel Médico Pro</p>
-              <h1 className="text-3xl font-display font-bold leading-tight">Dr(a). {user.name}</h1>
-              <p className="text-sm font-medium text-white/50">{user.specialty} • CRM {user.crm}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-aqua mb-1">CRM {user.crm}</p>
+              <h1 className="text-3xl font-display font-bold">Dr(a). {user.name}</h1>
            </div>
         </div>
         
-        {/* Google Calendar Integration Card */}
-        <div className={`p-4 rounded-3xl border transition-all flex items-center gap-4 ${isGoogleConnected ? 'bg-white/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
-           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isGoogleConnected ? 'bg-green-500' : 'bg-slate-700'}`}>
-              {isSyncing ? <div className="loader !border-white !border-t-transparent !w-4 !h-4"></div> : '📅'}
-           </div>
-           <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Google Calendar</p>
-              <button onClick={handleGoogleConnect} className="text-xs font-bold text-aqua hover:underline">
-                 {isGoogleConnected ? 'Sincronizado (Desconectar)' : 'Conectar Agora'}
-              </button>
-           </div>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setShowConfig(true)}
+            className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-bold border border-white/10 flex items-center gap-2"
+          >
+            ⚙️ Regras de Agendamento
+          </button>
+          <button className="px-6 py-3 bg-aqua text-slate-900 rounded-2xl text-xs font-bold shadow-xl shadow-aqua/20">
+            📅 Sincronizar Google
+          </button>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 flex-1 overflow-hidden">
         <div className="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col overflow-hidden">
            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-              <h2 className="text-xl font-display font-bold text-slate-900">Agenda Cloud em Tempo Real</h2>
-              <div className="flex items-center gap-2">
-                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live</span>
-              </div>
+              <h2 className="text-xl font-display font-bold text-slate-900">Agenda Atual</h2>
            </div>
            
-           <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide p-6 space-y-3">
+           <div className="flex-1 overflow-y-auto p-6 space-y-3">
               {appointments.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-20 text-center">
                   <span className="text-6xl mb-4">🩺</span>
-                  <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma consulta confirmada no sistema</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma consulta hoje</p>
                 </div>
               ) : (
                 appointments.map(app => (
-                  <div key={app.id} className="p-5 rounded-2xl flex items-center justify-between transition-all border bg-white border-slate-100 shadow-sm group">
+                  <div key={app.id} className="p-5 rounded-2xl flex items-center justify-between border bg-white border-slate-100 shadow-sm">
                     <div className="flex items-center gap-8">
                        <span className="font-display font-bold text-xl w-16 text-slate-900">{app.time}</span>
                        <div>
-                          <p className="font-bold text-slate-900">{app.patientName}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{app.plan} • {new Date(app.date).toLocaleDateString()}</p>
+                          <p className="font-bold text-slate-800">{app.patientName}</p>
+                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{app.plan}</p>
                        </div>
-                    </div>
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <button className="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-[10px] font-black uppercase tracking-widest">Confirmar</button>
                     </div>
                   </div>
                 ))
@@ -101,19 +88,57 @@ const PhysicianDashboard: React.FC<PhysicianDashboardProps> = ({ user, addNotifi
            </div>
         </div>
 
-        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex flex-col overflow-hidden">
-           <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Lista de Espera IA</h3>
-           <div className="space-y-3 overflow-y-auto scrollbar-hide">
-              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
-                 <div>
-                   <p className="text-sm font-bold text-slate-800">Ana Duarte</p>
-                   <p className="text-[9px] font-black uppercase text-deepAqua">Aguardando Vaga</p>
-                 </div>
-                 <button className="text-[9px] font-black uppercase text-white bg-slate-900 px-3 py-1.5 rounded-lg">Chamar</button>
+        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+           <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Resumo da Grade</h3>
+           <div className="p-4 bg-white rounded-2xl shadow-sm space-y-4">
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-400">Início:</span>
+                <span className="text-xs font-bold">{rules.start}h</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-400">Fim:</span>
+                <span className="text-xs font-bold">{rules.end}h</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-400">Duração:</span>
+                <span className="text-xs font-bold">{rules.slotDuration} min</span>
               </div>
            </div>
         </div>
       </div>
+
+      {showConfig && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95">
+              <h2 className="text-2xl font-display font-bold mb-6">Configurar Disponibilidade</h2>
+              <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Início do Dia</label>
+                       <input type="time" value={rules.start} onChange={e=>setRules({...rules, start: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Fim do Dia</label>
+                       <input type="time" value={rules.end} onChange={e=>setRules({...rules, end: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm" />
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Tempo por Consulta (Minutos)</label>
+                    <select value={rules.slotDuration} onChange={e=>setRules({...rules, slotDuration: parseInt(e.target.value)})} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-sm">
+                       <option value={15}>15 minutos</option>
+                       <option value={30}>30 minutos</option>
+                       <option value={45}>45 minutos</option>
+                       <option value={60}>1 hora</option>
+                    </select>
+                 </div>
+                 <div className="flex gap-4">
+                    <button onClick={()=>setShowConfig(false)} className="flex-1 py-4 border border-slate-200 rounded-2xl text-slate-400 font-bold">Cancelar</button>
+                    <button onClick={handleSaveRules} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold">Salvar Regras</button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

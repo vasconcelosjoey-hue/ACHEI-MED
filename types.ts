@@ -1,4 +1,3 @@
-
 export type UserRole = 'PATIENT' | 'PHYSICIAN';
 export type AppView = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'PROFILE' | 'SEARCH';
 export type Language = 'pt-BR' | 'en';
@@ -13,14 +12,12 @@ export interface User {
   crm?: string;
   specialty?: string;
   whatsapp?: string;
-  address?: {
-    street: string;
-    number: string;
-    neighborhood: string;
-    city: string;
-    zip: string;
+  googleCalendarConnected?: boolean;
+  availabilityRules?: {
+    start: string; // "08:00"
+    end: string;   // "18:00"
+    slotDuration: number; // 30 (minutos)
   };
-  plans?: string[];
 }
 
 export interface Appointment {
@@ -31,18 +28,19 @@ export interface Appointment {
   patientName: string;
   time: string;
   date: string;
-  status: 'CONFIRMED' | 'PENDING' | 'CANCELED' | 'BLOCKED' | 'confirmed' | 'pending' | 'canceled';
+  status: 'CONFIRMED' | 'PENDING' | 'CANCELED' | 'BLOCKED';
   plan: string;
   whatsapp: string;
   createdAt: number;
 }
 
+// Fixed missing Notification type referenced in App.tsx and other components
 export interface Notification {
   id: string;
   userId: string;
   title: string;
   message: string;
-  type: 'SUCCESS' | 'WARNING' | 'ALERT' | 'INFO';
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
   read: boolean;
   createdAt: number;
 }
@@ -56,6 +54,11 @@ export interface Physician {
   city: string;
   plans: string[];
   crm: string;
+  availabilityRules?: {
+    start: string;
+    end: string;
+    slotDuration: number;
+  };
 }
 
 export const MOCK_DATA = {
@@ -65,13 +68,10 @@ export const MOCK_DATA = {
 };
 
 export const CONSTANTS = {
-  // Galeria Dinâmica para o Hero (IA Curated)
   HERO_IMAGES: [
-    'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=1000', // Médico Sorrindo
-    'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=1000', // Médica examinando tablet
-    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000', // Consultório Moderno
-    'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&q=80&w=1000', // Tecnologia de diagnóstico
-    'https://images.unsplash.com/photo-1581594634720-636592e5872e?auto=format&fit=crop&q=80&w=1000'  // Foco em mãos e cuidado
+    'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=1000',
+    'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&q=80&w=1000',
+    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000'
   ],
   P1_IMAGE: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1000',
   P2_IMAGE: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1000',
@@ -85,44 +85,57 @@ export const CONSTANTS = {
   TERMS_URL: '#'
 };
 
-const generateDoctors = (): Physician[] => {
-  const firstNames = ['Lucas', 'Mariana', 'Ricardo', 'Beatriz', 'Felipe', 'Juliana', 'Gabriel', 'Fernanda', 'Tiago', 'Camila'];
-  const lastNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Lima', 'Carvalho', 'Ferreira', 'Ribeiro', 'Almeida'];
-  const doctors: Physician[] = [];
-
-  for (let i = 1; i <= 50; i++) {
-    const fn = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const ln = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const spec = MOCK_DATA.SPECIALTIES[Math.floor(Math.random() * MOCK_DATA.SPECIALTIES.length)];
-    
-    doctors.push({
-      id: `phy-${i}`,
-      name: `Dr(a). ${fn} ${ln}`,
-      specialty: spec,
-      avatar: `https://i.pravatar.cc/150?u=phy${i}`,
-      whatsapp: '5592988880000',
-      city: 'Manaus',
-      plans: ['Particular', MOCK_DATA.PLANS[Math.floor(Math.random() * MOCK_DATA.PLANS.length)]],
-      crm: `${10000 + i}-AM`
-    });
+export const MOCK_PHYSICIANS: Physician[] = [
+  {
+    id: 'phy-1',
+    name: 'Dr. Lucas Silva',
+    specialty: 'Cardiologia',
+    avatar: 'https://i.pravatar.cc/150?u=phy1',
+    whatsapp: '5592988880000',
+    city: 'Manaus',
+    plans: ['Unimed', 'Particular'],
+    crm: '12345-AM',
+    availabilityRules: { start: "08:00", end: "12:00", slotDuration: 30 }
+  },
+  {
+    id: 'phy-2',
+    name: 'Dra. Mariana Santos',
+    specialty: 'Dermatologia',
+    avatar: 'https://i.pravatar.cc/150?u=phy2',
+    whatsapp: '5592988881111',
+    city: 'Manaus',
+    plans: ['Bradesco', 'Particular'],
+    crm: '54321-AM',
+    availabilityRules: { start: "14:00", end: "18:00", slotDuration: 60 }
   }
-  return doctors;
-};
+];
 
-export const MOCK_PHYSICIANS: Physician[] = generateDoctors();
-
+// Fixed missing MOCK_APPOINTMENTS referenced in DashboardView.tsx
 export const MOCK_APPOINTMENTS: Appointment[] = [
   {
     id: 'app-1',
     physicianId: 'phy-1',
     physicianName: 'Dr. Lucas Silva',
     patientId: 'pat-1',
-    patientName: 'Maria Oliveira',
+    patientName: 'João Oliveira',
     time: '09:00',
     date: '2024-05-20',
-    status: 'confirmed',
+    status: 'CONFIRMED',
     plan: 'Unimed',
-    whatsapp: '5592988887777',
+    whatsapp: '5592988880000',
+    createdAt: Date.now()
+  },
+  {
+    id: 'app-2',
+    physicianId: 'phy-1',
+    physicianName: 'Dr. Lucas Silva',
+    patientId: 'pat-2',
+    patientName: 'Maria Souza',
+    time: '10:30',
+    date: '2024-05-20',
+    status: 'PENDING',
+    plan: 'Particular',
+    whatsapp: '5592988881111',
     createdAt: Date.now()
   }
 ];

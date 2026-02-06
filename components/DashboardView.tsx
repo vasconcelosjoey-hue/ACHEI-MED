@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Appointment, MOCK_APPOINTMENTS, MOCK_PHYSICIANS, Physician, Language } from '../types';
 
@@ -10,7 +9,7 @@ interface DashboardProps {
 
 const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS);
-  const [formData, setFormData] = useState({ patientName: '', email: '', whatsapp: '', time: '09:00', physicianId: 'phy1' });
+  const [formData, setFormData] = useState({ patientName: '', email: '', whatsapp: '', time: '09:00', physicianId: 'phy-1' });
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [conflict, setConflict] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +25,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   };
 
   useEffect(() => {
-    const isOccupied = appointments.some(a => a.time === formData.time && a.status !== 'canceled');
+    // Corrected to use uppercase status from types.ts
+    const isOccupied = appointments.some(a => a.time === formData.time && a.status !== 'CANCELED');
     if (isOccupied) {
       const suggest = suggestNextSlot(formData.time);
       setConflict(suggest);
@@ -36,7 +36,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   }, [formData.time, appointments]);
 
   const suggestNextSlot = (currentTime: string) => {
-    const freeSlots = ALL_SLOTS.filter(slot => !appointments.some(a => a.time === slot && a.status !== 'canceled'));
+    // Corrected to use uppercase status from types.ts
+    const freeSlots = ALL_SLOTS.filter(slot => !appointments.some(a => a.time === slot && a.status !== 'CANCELED'));
     const laterSlots = freeSlots.filter(slot => slot > currentTime);
     return laterSlots.length > 0 ? laterSlots[0] : freeSlots[0] || 'N/A';
   };
@@ -45,10 +46,17 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
     e.preventDefault();
     if (conflict && conflict !== 'N/A') return;
 
+    const physician = MOCK_PHYSICIANS.find(p => p.id === formData.physicianId);
+
     const newApp: Appointment = {
       id: Math.random().toString(36).substr(2, 9),
+      patientId: 'temp-patient-id', // Required by Appointment type
+      physicianName: physician?.name || '', // Required by Appointment type
+      date: new Date().toISOString().split('T')[0], // Required by Appointment type
+      plan: 'Particular', // Required by Appointment type
+      createdAt: Date.now(), // Required by Appointment type
       ...formData,
-      status: 'pending'
+      status: 'PENDING' // Use uppercase status constant
     };
     setAppointments(prev => [...prev, newApp].sort((a, b) => a.time.localeCompare(b.time)));
     setFormData({ ...formData, patientName: '', email: '', whatsapp: '' });
@@ -56,7 +64,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   };
 
   const cancelApp = (id: string) => {
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'canceled' } : a));
+    // Corrected to use uppercase status from types.ts
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'CANCELED' } : a));
   };
 
   const getPhysicianName = (id: string) => MOCK_PHYSICIANS.find(p => p.id === id)?.name || '-';
@@ -70,7 +79,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   const onDragStart = (id: string) => setDraggedId(id);
   const onDrop = (targetTime: string) => {
     if (!draggedId) return;
-    const isOccupied = appointments.some(a => a.time === targetTime && a.id !== draggedId && a.status !== 'canceled');
+    // Corrected to use uppercase status from types.ts
+    const isOccupied = appointments.some(a => a.time === targetTime && a.id !== draggedId && a.status !== 'CANCELED');
     if (isOccupied) {
         alert("Este horário já está preenchido!");
         return;
@@ -80,12 +90,13 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
   };
 
   const stats = {
-    occupied: appointments.filter(a => a.status !== 'canceled').length,
-    free: ALL_SLOTS.length - appointments.filter(a => a.status !== 'canceled').length,
-    canceled: appointments.filter(a => a.status === 'canceled').length,
+    // Corrected to use uppercase status from types.ts
+    occupied: appointments.filter(a => a.status !== 'CANCELED').length,
+    free: ALL_SLOTS.length - appointments.filter(a => a.status !== 'CANCELED').length,
+    canceled: appointments.filter(a => a.status === 'CANCELED').length,
   };
 
-  const freeTimeSlots = ALL_SLOTS.filter(slot => !appointments.some(a => a.time === slot && a.status !== 'canceled'));
+  const freeTimeSlots = ALL_SLOTS.filter(slot => !appointments.some(a => a.time === slot && a.status !== 'CANCELED'));
 
   return (
     <div className="bg-[#F8FAFC] min-h-screen pt-24 pb-12 px-4 md:px-6 font-sans">
@@ -150,7 +161,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {ALL_SLOTS.map((slot) => {
-                      const app = appointments.find(a => a.time === slot && a.status !== 'canceled');
+                      // Corrected to use uppercase status from types.ts
+                      const app = appointments.find(a => a.time === slot && a.status !== 'CANCELED');
                       return (
                         <tr 
                           key={slot} 
@@ -183,8 +195,8 @@ const DashboardView: React.FC<DashboardProps> = ({ t, lang, onLogout }) => {
                           </td>
                           <td className="px-8 py-6">
                             {app && (
-                              <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${app.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
-                                {app.status === 'confirmed' ? 'Confirmado' : 'Pendente'}
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${app.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+                                {app.status === 'CONFIRMED' ? 'Confirmado' : 'Pendente'}
                               </span>
                             )}
                           </td>
